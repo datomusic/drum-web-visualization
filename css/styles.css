@@ -1,0 +1,106 @@
+/* styles.css — base layout + state classes for the Dato DRUM visualizer */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: sans-serif;
+}
+
+/* ---- Visualization container ---- */
+
+#visualization {
+  width: 100vmin;
+  max-width: 800px;
+}
+
+#visualization svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---- MIDI status bar ---- */
+
+#midi-status {
+  margin-top: 1rem;
+  color: #888;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   State classes — applied/removed by visualizer.js
+   ============================================================ */
+
+/* -- Buttons (REPEAT, RANDOM) -- */
+
+.control.button {
+  transition: opacity 0.05s, filter 0.05s;
+}
+
+.control.button.pressed {
+  filter: brightness(calc(1 + var(--cc-pressure, 1) * 0.6));
+  opacity: 0.85;
+}
+
+/* -- Play button -- */
+
+#play-outer {
+  transition: fill 0.1s;
+}
+
+#play-outer.playing {
+  fill: #00d9b5;
+}
+
+/* -- Drum pads -- */
+
+.control.pad {
+  transition: opacity 0.05s;
+}
+
+.control.pad.hit {
+  opacity: 0.6;
+  transition: opacity 0s; /* snap on */
+}
+
+/* -- Step LEDs -- */
+
+.step-led {
+  transition: fill 0.05s;
+}
+
+.step-led.active {
+  fill: #00d9b5;
+}
+
+.step-center.active {
+  fill: #00d9b5;
+}
+
+/* -- Swing bars -- */
+
+.swing-bar {
+  transition: opacity 0.1s;
+}
+
+.swing-bar.active {
+  opacity: 1;
+}
+
+/* -- Knob indicators -- */
+/* transform-origin is set inline by JS using getBBox() */
+
+.knob-indicator,
+.pitch-knob {
+  transition: transform 0.08s ease-out;
+}
