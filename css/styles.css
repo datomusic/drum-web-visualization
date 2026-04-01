@@ -101,6 +101,7 @@ body {
 /* transform-origin is set inline by JS using getBBox() */
 
 .knob-indicator,
-.pitch-knob {
+.pitch-knob,
+#slider-swing {
   transition: transform 0.08s ease-out;
 }

@@ -1,14 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dato DRUM</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-  <div id="visualization">
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:serif="http://www.serif.com/" width="100%" height="100%" viewBox="0 0 2210 2210" version="1.1" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;">
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:serif="http://www.serif.com/" width="100%" height="100%" viewBox="0 0 2210 2210" version="1.1" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;">
     <rect id="Artboard1" x="0" y="0" width="2209.85" height="2209.85" style="fill:none;" />
     <g>
         <clipPath id="_clip1">
@@ -222,8 +213,3 @@
         </g>
     </g>
 </svg>
-  </div>
-  <div id="midi-status">Requesting MIDI access…</div>
-  <script type="module" src="js/main.js"></script>
-</body>
-</html>

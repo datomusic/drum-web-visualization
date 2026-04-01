@@ -44,18 +44,16 @@ function handleCC({ cc, value }) {
 
   } else if (ctrl.type === 'knob') {
     const deg = ccToRotation(value);
-    // Store as a data attribute so CSS can read it, and rotate the indicator
     if (el) el.dataset.ccValue = value;
-    if (ctrl.indicatorId) {
-      const indicator = document.getElementById(ctrl.indicatorId);
-      if (indicator) {
-        // Use the bounding box centre as the rotation origin
-        const bbox = indicator.getBBox();
-        const cx = bbox.x + bbox.width / 2;
-        const cy = bbox.y + bbox.height / 2;
-        indicator.style.transformOrigin = `${cx}px ${cy}px`;
-        indicator.style.transform = `rotate(${deg}deg)`;
-      }
+    const rotTarget = ctrl.indicatorId
+      ? document.getElementById(ctrl.indicatorId)
+      : el;
+    if (rotTarget) {
+      const bbox = rotTarget.getBBox();
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      rotTarget.style.transformOrigin = `${cx}px ${cy}px`;
+      rotTarget.style.transform = `rotate(${deg}deg)`;
     }
 
   } else if (ctrl.type === 'slider') {
@@ -67,19 +65,7 @@ function handleCC({ cc, value }) {
     if (indicator) indicator.style.transform = transform;
     if (el) el.style.transform = transform;
 
-  } else if (ctrl.type === 'display' && cc === 9) {
-    // Swing: light up bars proportionally
-    updateSwingBars(value);
   }
-}
-
-function updateSwingBars(value) {
-  // 3 bars, each representing ~42 units of the 0-127 range
-  const thresholds = [42, 85, 127];
-  thresholds.forEach((threshold, i) => {
-    const bar = document.getElementById(`swing-bar-${i}`);
-    bar?.classList.toggle('active', value > threshold - 1);
-  });
 }
 
 // ---------------------------------------------------------------------------
