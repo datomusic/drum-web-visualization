@@ -224,7 +224,10 @@ if __name__ == '__main__':
     import os
     import sys
     base = os.path.dirname(os.path.abspath(__file__))
-    svg_in = sys.argv[1] if len(sys.argv) > 1 else os.path.join(base, 'dato-drum-faceplate-drawing-af.svg')
+    if len(sys.argv) < 2:
+        print("Usage: python3 annotate-svg.py <input.svg>", file=sys.stderr)
+        sys.exit(1)
+    svg_in = sys.argv[1]
     svg_out = os.path.join(base, 'dato-drum-faceplate-annotated.svg')
     annotate(svg_in, svg_out)
     inline_svg(
