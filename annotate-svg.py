@@ -55,8 +55,9 @@ def polar(elem):
 
 def set_attr(elem, id_val, class_val):
     elem.set('id', id_val)
-    existing = elem.get('class', '')
-    elem.set('class', (existing + ' ' + class_val).strip())
+    existing_classes = set(elem.get('class', '').split())
+    new_classes = set(class_val.split())
+    elem.set('class', ' '.join(sorted(existing_classes | new_classes)))
 
 
 # ---------------------------------------------------------------------------
@@ -203,10 +204,30 @@ def annotate(input_path, output_path):
     print(f"  Step LEDs:           {len(ring_leds)}")
 
 
+def inline_svg(html_path, svg_path):
+    with open(svg_path, 'r', encoding='UTF-8') as f:
+        svg_content = f.read().strip()
+    # Strip the XML declaration if present (not valid inside HTML)
+    svg_content = re.sub(r'<\?xml[^?]*\?>\s*', '', svg_content)
+    with open(html_path, 'r', encoding='utf-8') as f:
+        html = f.read()
+    new_html, count = re.subn(r'<svg\b.*?</svg>', svg_content, html, count=1, flags=re.DOTALL)
+    if count == 0:
+        print("Warning: no <svg> found in index.html — skipping inline step")
+        return
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(new_html)
+    print(f"index.html updated.")
+
+
 if __name__ == '__main__':
     import os
+    import sys
     base = os.path.dirname(os.path.abspath(__file__))
-    annotate(
-        os.path.join(base, 'dato-drum-faceplate-drawing.svg'),
-        os.path.join(base, 'dato-drum-faceplate-annotated.svg'),
+    svg_in = sys.argv[1] if len(sys.argv) > 1 else os.path.join(base, 'dato-drum-faceplate-drawing.svg')
+    svg_out = os.path.join(base, 'dato-drum-faceplate-annotated.svg')
+    annotate(svg_in, svg_out)
+    inline_svg(
+        os.path.join(base, 'index.html'),
+        svg_out,
     )
