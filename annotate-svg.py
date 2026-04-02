@@ -135,8 +135,8 @@ def annotate(input_path, output_path):
 
             elif fill == '#fff':
                 if 400 < dist < 500:
-                    # Per-track pitch knobs (one per quadrant, dist≈435)
-                    ddd_paths.append(('pitch_knob', elem, dist, angle))
+                    # Per-track pitch sliders (one per quadrant, dist≈435)
+                    ddd_paths.append(('pitch_slider', elem, dist, angle))
                 # else: structural decoration (octagon body, etc.)
 
     # ---- Assign play button circles (sorted by radius descending) ----
@@ -154,10 +154,10 @@ def annotate(input_path, output_path):
         set_attr(e, f'pitch-indicator-{t}', 'knob-indicator')
 
     # ---- Pitch knobs (white, dist≈435): same quadrant mapping ----
-    pitch_knobs = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'pitch_knob']
+    pitch_knobs = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'pitch_slider']
     for e, d, a in pitch_knobs:
         t = track_from_angle(a)
-        set_attr(e, f'pitch-knob-{t}', 'control knob pitch-knob')
+        set_attr(e, f'pitch-slider-{t}', 'control slider pitch-slider')
 
     # ---- Drum pads: id="drumpad-{1-4}" already set in source SVG — just add classes ----
     for e, t in pad_groups:
@@ -186,7 +186,7 @@ def annotate(input_path, output_path):
     print(f"Annotated SVG written to: {output_path}")
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
-    print(f"  Pitch knobs:         {len(pitch_knobs)}")
+    print(f"  Pitch sliders:       {len(pitch_knobs)}")
     print(f"  Drum pads:           {len(pad_groups)}/4")
     print(f"  Step LEDs:           {len(leds)}/32 [{step_status}] → step-00..step-{len(leds)-1:02d}")
     status = "OK" if len(sample_selects) == 8 and not missing_selects else "INCOMPLETE"

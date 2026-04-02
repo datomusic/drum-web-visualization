@@ -24,10 +24,10 @@ export const CC_CONTROLS = {
   17: { id: 'btn-repeat', type: 'button', indicatorId: null, label: 'Repeat', pressure: true },
   // Pitch sliders: dir is the unit vector toward CC 127 (outward from device center)
   // travel is half the pill length in SVG user units (169.7 / 2)
-  21: { id: 'pitch-knob-2', type: 'slider', indicatorId: 'pitch-indicator-2', label: 'Pitch 1', dir: [-0.707, 0.707], travel: 84.85 },
-  22: { id: 'pitch-knob-3', type: 'slider', indicatorId: 'pitch-indicator-3', label: 'Pitch 2', dir: [-0.707, -0.707], travel: 84.85 },
-  23: { id: 'pitch-knob-4', type: 'slider', indicatorId: 'pitch-indicator-4', label: 'Pitch 3', dir: [0.707, -0.707], travel: 84.85 },
-  24: { id: 'pitch-knob-1', type: 'slider', indicatorId: 'pitch-indicator-1', label: 'Pitch 4', dir: [0.707, 0.707], travel: 84.85 },
+  21: { id: 'pitch-slider-2', type: 'slider', indicatorId: 'pitch-indicator-2', label: 'Pitch 1', dir: [-0.707, 0.707], travel: 84.85 },
+  22: { id: 'pitch-slider-3', type: 'slider', indicatorId: 'pitch-indicator-3', label: 'Pitch 2', dir: [-0.707, -0.707], travel: 84.85 },
+  23: { id: 'pitch-slider-4', type: 'slider', indicatorId: 'pitch-indicator-4', label: 'Pitch 3', dir: [0.707, -0.707], travel: 84.85 },
+  24: { id: 'pitch-slider-1', type: 'slider', indicatorId: 'pitch-indicator-1', label: 'Pitch 4', dir: [0.707, 0.707], travel: 84.85 },
   74: { id: 'btn-filter', type: 'button', indicatorId: null, label: 'Filter', pressure: true },
   75: { id: 'knob-resonance', type: 'knob', indicatorId: null, label: 'Resonance' },
 };
