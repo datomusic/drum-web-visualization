@@ -101,6 +101,7 @@ def annotate(input_path, output_path):
     circles = []      # play button
     pad_groups = []   # drum pad <g> elements: (elem, track_num)
     sample_selects = []  # sample select arrow buttons
+    buttons = []      # uniquely-coloured control buttons
 
     for elem in all_elements:
         tag = elem.tag.split('}')[-1]
@@ -124,20 +125,13 @@ def annotate(input_path, output_path):
                 elem.set('class', ' '.join(sorted(existing_classes | {'control', 'sample-select'})))
                 sample_selects.append(existing_id)
 
-            # --- Uniquely coloured controls ---
-            if fill == '#f00':
-                set_attr(elem, 'btn-repeat', 'control button')
+            # --- Uniquely coloured control buttons (IDs already set in source SVG) ---
+            if re.match(r'^btn-(crush|filter|random|repeat)$', existing_id):
+                existing_classes = set(elem.get('class', '').split())
+                elem.set('class', ' '.join(sorted(existing_classes | {'control', 'button'})))
+                buttons.append(existing_id)
 
-            elif fill == '#fff000':
-                set_attr(elem, 'btn-random', 'control button')
-
-            elif fill == '#00b400':
-                set_attr(elem, 'btn-crush', 'control button')
-
-            elif fill == '#0084ff':
-                set_attr(elem, 'btn-filter', 'control button')
-
-            elif fill == '#414141':
+            if fill == '#414141':
                 # Four knob-indicator tick-marks, one per diagonal quadrant
                 ddd_paths.append(('indicator', elem, dist, angle))
 
@@ -210,6 +204,17 @@ def annotate(input_path, output_path):
     if extra_selects:
         for sid in sorted(extra_selects):
             print(f"    EXTRA:   {sid}")
+
+    expected_buttons = {'btn-crush', 'btn-filter', 'btn-random', 'btn-repeat'}
+    found_buttons = set(buttons)
+    missing_buttons = expected_buttons - found_buttons
+    btn_status = "OK" if found_buttons == expected_buttons else "INCOMPLETE"
+    print(f"  Buttons:             {len(found_buttons)}/4 [{btn_status}]")
+    for bid in sorted(found_buttons):
+        print(f"    found: {bid}")
+    if missing_buttons:
+        for bid in sorted(missing_buttons):
+            print(f"    MISSING: {bid}")
 
 
 def inline_svg(html_path, svg_path):
