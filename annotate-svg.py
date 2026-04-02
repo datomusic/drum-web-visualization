@@ -111,6 +111,11 @@ def annotate(input_path, output_path):
             if m:
                 pad_groups.append((elem, int(m.group(1))))
 
+            # Knobs: id="knob-tempo" / "knob-volume" already set in source SVG
+            if elem.get('id', '') in ('knob-tempo', 'knob-volume'):
+                existing_classes = set(elem.get('class', '').split())
+                elem.set('class', ' '.join(sorted(existing_classes | {'knob'})))
+
         elif tag == 'path':
             # --- Sample select buttons (IDs already set in source SVG) ---
             existing_id = elem.get('id', '')

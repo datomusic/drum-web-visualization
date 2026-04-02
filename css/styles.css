@@ -79,7 +79,8 @@ body {
 .sample-select,
 .button,
 .pad,
-#play-outer {
+#play-outer,
+.knob>path {
   transition: fill 0.05s;
   stroke: rgba(0, 0, 0, 0.02);
   stroke-width: 8;          /* SVG user units — scales with the SVG */
@@ -107,7 +108,13 @@ body {
 
 /* -- Knob indicators -- */
 /* transform-origin is set inline by JS using getBBox() */
-/* 
+
+
+.knob>path,
+.knob-indicator {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+  
 .knob-indicator,
 .pitch-slider,
 #slider-swing {
