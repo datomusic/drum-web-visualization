@@ -51,12 +51,6 @@ def polar(elem):
     return math.hypot(dx, dy), math.degrees(math.atan2(dy, dx))
 
 
-def is_circular_path(d):
-    """True if path is a 4-arc bezier circle (4 cubic curves, no lines)."""
-    curves = len(re.findall(r'[cC]', d))
-    lines  = len(re.findall(r'[lL]', d))
-    return curves == 4 and lines == 0
-
 
 def set_attr(elem, id_val, class_val):
     elem.set('id', id_val)
