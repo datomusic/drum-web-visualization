@@ -171,9 +171,9 @@ def annotate(input_path, output_path):
         t = track_from_angle(a)
         set_attr(e, f'pitch-knob-{t}', 'control knob pitch-knob')
 
-    # ---- Drum pads: id="drumpad-{1-4}" from source SVG ----
+    # ---- Drum pads: id="drumpad-{1-4}" already set in source SVG — just add classes ----
     for e, t in pad_groups:
-        set_attr(e, f'pad-{t}', 'control pad')
+        set_attr(e, f'drumpad-{t}', 'control pad')
 
     # ---- Step LEDs: sort by polar angle, assign sequential IDs ----
     leds = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'led']
