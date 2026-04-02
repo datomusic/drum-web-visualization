@@ -26,6 +26,7 @@ body {
   width: 100%;
   height: auto;
   display: block;
+  transform: rotate(90deg);
 }
 
 /* ---- MIDI status bar ---- */
@@ -64,13 +65,13 @@ body {
 
 /* -- Drum pads -- */
 
-.control.pad {
-  transition: opacity 0.05s;
+.control.pad > path:first-child {
+  transition: fill-opacity 0.05s;
 }
 
-.control.pad.hit {
-  opacity: 0.6;
-  transition: opacity 0s; /* snap on */
+.control.pad.hit > path:first-child {
+  fill-opacity: 0.5;
+  transition: fill-opacity 0s; /* snap on */
 }
 
 /* -- Step LEDs -- */
@@ -85,7 +86,7 @@ body {
   stroke: rgba(0, 0, 0, 0.02);
   stroke-width: 8;          /* SVG user units — scales with the SVG */
   paint-order: fill stroke; /* render stroke in front of fill so it overlaps, not frames */
-  filter: drop-shadow(0 2px 0px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(2px 0px 0px rgba(0, 0, 0, 0.5));
 }
 
 .step-led.active {
@@ -109,7 +110,6 @@ body {
 /* -- Knob indicators -- */
 /* transform-origin is set inline by JS using getBBox() */
 
-
 .knob>path,
 .knob-indicator {
   stroke: rgba(255, 255, 255, 0.2);
@@ -119,4 +119,4 @@ body {
 .pitch-slider,
 #slider-swing {
   transition: transform 0.08s ease-out;
-} */
+}
