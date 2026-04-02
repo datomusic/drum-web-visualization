@@ -131,7 +131,11 @@ def annotate(input_path, output_path):
                 elem.set('class', ' '.join(sorted(existing_classes | {'control', 'button'})))
                 buttons.append(existing_id)
 
-            if fill == '#414141':
+            # --- Step LEDs: detected by existing source IDs (step, step1–step31) ---
+            if existing_id == 'step' or re.match(r'^step\d+$', existing_id):
+                ddd_paths.append(('led', elem, dist, angle))
+
+            elif fill == '#414141':
                 # Four knob-indicator tick-marks, one per diagonal quadrant
                 ddd_paths.append(('indicator', elem, dist, angle))
 
@@ -140,10 +144,6 @@ def annotate(input_path, output_path):
                     # Per-track pitch knobs (one per quadrant, dist≈435)
                     ddd_paths.append(('pitch_knob', elem, dist, angle))
                 # else: structural decoration (octagon body, etc.)
-
-            elif fill == '#ddd':
-                if is_circular_path(elem.get('d', '')):
-                    ddd_paths.append(('led', elem, dist, angle))
 
     # ---- Assign play button circles (sorted by radius descending) ----
     circles.sort(key=lambda e: float(e.get('r', 0)), reverse=True)
@@ -188,12 +188,13 @@ def annotate(input_path, output_path):
     missing_selects = expected_selects - found_selects
     extra_selects = found_selects - expected_selects
 
+    step_status = "OK" if len(leds) == 32 else f"WARNING: expected 32"
     print(f"Annotated SVG written to: {output_path}")
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
     print(f"  Drum pads:           {len(pad_groups)}/4")
-    print(f"  Step LEDs:           {len(leds)}")
+    print(f"  Step LEDs:           {len(leds)}/32 [{step_status}] → step-00..step-{len(leds)-1:02d}")
     status = "OK" if len(sample_selects) == 8 and not missing_selects else "INCOMPLETE"
     print(f"  Sample selects:      {len(sample_selects)}/8 [{status}]")
     for sid in sorted(found_selects):

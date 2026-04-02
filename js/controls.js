@@ -77,11 +77,11 @@ export const NOTE_CONTROLS = {
 };
 
 /**
- * Sequencer step LED IDs in order (step-00..step-39).
+ * Sequencer step LED IDs in order (step-00..step-31).
  * The exact track↔LED mapping is TBD — verify with device + debug overlay.
  * Update TRACK_STEP_MAP once the physical layout is confirmed.
  */
-export const STEP_LED_IDS = Array.from({ length: 40 }, (_, i) => `step-${String(i).padStart(2, '0')}`);
+export const STEP_LED_IDS = Array.from({ length: 32 }, (_, i) => `step-${String(i).padStart(2, '0')}`);
 
 /**
  * Track → step LED index range (TBD — fill in after device verification).
