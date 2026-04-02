@@ -89,12 +89,16 @@ body {
   filter: drop-shadow(2px 0px 0px rgba(0, 0, 0, 0.5));
 }
 
+.step-led.lit {
+  fill: #007060 !important;
+}
+
 .step-led.active {
-  fill: #00d9b5;
+  fill: #00d9b5 !important;
 }
 
 .step-center.active {
-  fill: #00d9b5;
+  fill: #00d9b5 !important;
 }
 
 /* -- Swing bars -- */

@@ -4,7 +4,7 @@
  * Listens for CustomEvents dispatched by midi.js.
  */
 
-import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, ccToRotation, ccToTranslation } from './controls.js';
+import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP, ccToRotation, ccToTranslation } from './controls.js';
 
 // Duration a pad stays "lit" after a hit (ms)
 const HIT_DURATION_MS = 120;
@@ -19,11 +19,12 @@ let currentStep = 0;
 let isPlaying = false;
 
 export function initVisualizer() {
-  document.addEventListener('midi-cc',        e => handleCC(e.detail));
-  document.addEventListener('midi-note-on',   e => handleNoteOn(e.detail));
-  document.addEventListener('midi-note-off',  e => handleNoteOff(e.detail));
-  document.addEventListener('midi-clock',     () => handleClock());
-  document.addEventListener('midi-transport', e => handleTransport(e.detail));
+  document.addEventListener('midi-cc',               e => handleCC(e.detail));
+  document.addEventListener('midi-note-on',          e => handleNoteOn(e.detail));
+  document.addEventListener('midi-note-off',         e => handleNoteOff(e.detail));
+  document.addEventListener('midi-clock',            () => handleClock());
+  document.addEventListener('midi-transport',        e => handleTransport(e.detail));
+  document.addEventListener('midi-sequencer-state',  e => handleSequencerState(e.detail));
 }
 
 // ---------------------------------------------------------------------------
@@ -142,4 +143,22 @@ function clearAllStepLEDs() {
   for (const id of STEP_LED_IDS) {
     document.getElementById(id)?.classList.remove('active');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sequencer state
+// ---------------------------------------------------------------------------
+
+function handleSequencerState({ stepVelocities }) {
+  let found = 0, missing = 0;
+  for (const [track, [start, end]] of Object.entries(TRACK_STEP_MAP)) {
+    for (let step = 0; step <= end - start; step++) {
+      const id = STEP_LED_IDS[start + step];
+      const el = document.getElementById(id);
+      if (!el) { missing++; if (missing === 1) console.warn(`sequencer: element not found: "${id}"`); continue; }
+      found++;
+      el.classList.toggle('lit', stepVelocities[track * 8 + step] > 0);
+    }
+  }
+  console.log(`sequencer: updated ${found} LEDs, ${missing} missing`);
 }

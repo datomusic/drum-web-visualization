@@ -84,10 +84,17 @@ export const NOTE_CONTROLS = {
 export const STEP_LED_IDS = Array.from({ length: 32 }, (_, i) => `step-${String(i).padStart(2, '0')}`);
 
 /**
- * Track → step LED index range (TBD — fill in after device verification).
- * Example: { 1: [0, 9], 2: [10, 19], 3: [20, 29], 4: [30, 39] }
+ * Track → step LED index range.
+ * Maps firmware track index (0–3) to inclusive [start, end] in STEP_LED_IDS.
+ * Firmware payload: bytes 0–7 = track 0, 8–15 = track 1, 16–23 = track 2, 24–31 = track 3.
+ * Ring 0 (outermost, step-00..step-07) = track 0, etc. Verify with device.
  */
-export const TRACK_STEP_MAP = null; // set once confirmed
+export const TRACK_STEP_MAP = {
+  0: [0, 7],
+  1: [8, 15],
+  2: [16, 23],
+  3: [24, 31],
+};
 
 /**
  * Map a CC value (0-127) to a CSS rotation angle in degrees.
