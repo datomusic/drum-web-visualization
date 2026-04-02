@@ -101,6 +101,9 @@ def annotate(input_path, output_path):
     # ---- Buckets ----
     ddd_paths = []    # step LEDs
     circles = []      # play button
+    pad_groups = []   # drum pad <g> elements
+
+    SERIF_ID = f'{{{SERIF_NS}}}id'
 
     for elem in all_elements:
         tag = elem.tag.split('}')[-1]
@@ -109,6 +112,19 @@ def annotate(input_path, output_path):
 
         if tag == 'circle':
             circles.append(elem)
+
+        elif tag == 'g':
+            # Drum pads: serif:id="drumpad" (or plain id="drumpad" on the first one)
+            if elem.get(SERIF_ID) == 'drumpad' or elem.get('id') == 'drumpad':
+                # polar() can't handle <g>; use centroid of first path child
+                first_path = next(
+                    (c for c in elem if c.tag.split('}')[-1] == 'path'), None
+                )
+                if first_path is not None:
+                    g_dist, g_angle = polar(first_path)
+                else:
+                    g_dist, g_angle = dist, angle
+                pad_groups.append((elem, g_dist, g_angle))
 
         elif tag == 'path':
             # --- Uniquely coloured controls ---
@@ -132,9 +148,6 @@ def annotate(input_path, output_path):
                 if 400 < dist < 500:
                     # Per-track pitch knobs (one per quadrant, dist≈435)
                     ddd_paths.append(('pitch_knob', elem, dist, angle))
-                elif 880 < dist < 970:
-                    # Drum pads (one per corner, dist≈927)
-                    ddd_paths.append(('pad', elem, dist, angle))
                 # else: structural decoration (octagon body, etc.)
 
             elif fill == '#ddd':
@@ -161,9 +174,8 @@ def annotate(input_path, output_path):
         t = track_from_angle(a)
         set_attr(e, f'pitch-knob-{t}', 'control knob pitch-knob')
 
-    # ---- Drum pads (white, dist≈927): same quadrant mapping ----
-    pads = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'pad']
-    for e, d, a in pads:
+    # ---- Drum pads: <g serif:id="drumpad"> groups, one per quadrant ----
+    for e, d, a in pad_groups:
         t = track_from_angle(a)
         set_attr(e, f'pad-{t}', 'control pad')
 
@@ -184,7 +196,7 @@ def annotate(input_path, output_path):
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
-    print(f"  Drum pads:           {len(pads)}")
+    print(f"  Drum pads:           {len(pad_groups)}")
     print(f"  Step LEDs:           {len(leds)}")
 
 
