@@ -53,6 +53,13 @@ def polar(elem):
     return math.hypot(dx, dy), math.degrees(math.atan2(dy, dx))
 
 
+def is_circular_path(d):
+    """True if path is a 4-arc bezier circle (4 cubic curves, no lines)."""
+    curves = len(re.findall(r'[cC]', d))
+    lines  = len(re.findall(r'[lL]', d))
+    return curves == 4 and lines == 0
+
+
 def set_attr(elem, id_val, class_val):
     elem.set('id', id_val)
     existing_classes = set(elem.get('class', '').split())
@@ -139,7 +146,8 @@ def annotate(input_path, output_path):
                 # else: structural decoration (octagon body, etc.)
 
             elif fill == '#ddd':
-                ddd_paths.append(('led', elem, dist, angle))
+                if is_circular_path(elem.get('d', '')):
+                    ddd_paths.append(('led', elem, dist, angle))
 
     # ---- Assign play button circles (sorted by radius descending) ----
     circles.sort(key=lambda e: float(e.get('r', 0)), reverse=True)
@@ -177,17 +185,10 @@ def annotate(input_path, output_path):
     # ---- Step LEDs: sort by polar angle, assign sequential IDs ----
     leds = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'led']
 
-    # The element very close to center (dist≈22) is a separate center indicator
-    center_leds = [(e, d, a) for e, d, a in leds if d < 50]
-    ring_leds = [(e, d, a) for e, d, a in leds if d >= 50]
-
     # Sort ring LEDs by polar angle (-180→+180)
-    ring_leds.sort(key=lambda x: x[2])
+    leds.sort(key=lambda x: x[2])
 
-    for e, d, a in center_leds:
-        set_attr(e, 'step-center', 'step-led step-center')
-
-    for i, (e, d, a) in enumerate(ring_leds):
+    for i, (e, d, a) in enumerate(leds):
         set_attr(e, f'step-{i:02d}', 'step-led')
 
     # Write output
@@ -200,8 +201,7 @@ def annotate(input_path, output_path):
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
     print(f"  Drum pads:           {len(pads)}")
-    print(f"  Center LED:          {len(center_leds)}")
-    print(f"  Step LEDs:           {len(ring_leds)}")
+    print(f"  Step LEDs:           {len(leds)}")
 
 
 def inline_svg(html_path, svg_path):
