@@ -102,6 +102,7 @@ def annotate(input_path, output_path):
     ddd_paths = []    # step LEDs
     circles = []      # play button
     pad_groups = []   # drum pad <g> elements
+    sample_selects = []  # sample select arrow buttons
 
     SERIF_ID = f'{{{SERIF_NS}}}id'
 
@@ -127,6 +128,13 @@ def annotate(input_path, output_path):
                 pad_groups.append((elem, g_dist, g_angle))
 
         elif tag == 'path':
+            # --- Sample select buttons (IDs already set in source SVG) ---
+            existing_id = elem.get('id', '')
+            if re.match(r'^select-[1-4]-(up|down)$', existing_id):
+                existing_classes = set(elem.get('class', '').split())
+                elem.set('class', ' '.join(sorted(existing_classes | {'control', 'sample-select'})))
+                sample_selects.append(existing_id)
+
             # --- Uniquely coloured controls ---
             if fill == '#f00':
                 set_attr(elem, 'btn-repeat', 'control button')
@@ -192,12 +200,28 @@ def annotate(input_path, output_path):
     # ElementTree strips the XML declaration; add it back manually
     tree.write(output_path, xml_declaration=True, encoding='UTF-8')
 
+    # ---- Verify sample select buttons ----
+    expected_selects = {f'select-{t}-{d}' for t in range(1, 5) for d in ('up', 'down')}
+    found_selects = set(sample_selects)
+    missing_selects = expected_selects - found_selects
+    extra_selects = found_selects - expected_selects
+
     print(f"Annotated SVG written to: {output_path}")
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
     print(f"  Drum pads:           {len(pad_groups)}")
     print(f"  Step LEDs:           {len(leds)}")
+    status = "OK" if len(sample_selects) == 8 and not missing_selects else "INCOMPLETE"
+    print(f"  Sample selects:      {len(sample_selects)}/8 [{status}]")
+    for sid in sorted(found_selects):
+        print(f"    found:   {sid}")
+    if missing_selects:
+        for sid in sorted(missing_selects):
+            print(f"    MISSING: {sid}")
+    if extra_selects:
+        for sid in sorted(extra_selects):
+            print(f"    EXTRA:   {sid}")
 
 
 def inline_svg(html_path, svg_path):
