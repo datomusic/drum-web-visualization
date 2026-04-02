@@ -1,7 +1,7 @@
 """
 annotate-svg.py
 One-time script to add semantic IDs and classes to the raw Dato DRUM SVG.
-Identifies elements by fill color and position relative to the center (1105, 1105).
+Identifies elements by fill color, position relative to center (1105, 1105), and explicit IDs.
 Outputs dato-drum-faceplate-annotated.svg.
 """
 
@@ -11,12 +11,10 @@ from xml.etree import ElementTree as ET
 
 SVG_NS = 'http://www.w3.org/2000/svg'
 XLINK_NS = 'http://www.w3.org/1999/xlink'
-SERIF_NS = 'http://www.serif.com/'
 CENTER = (1105.0, 1105.0)
 
 ET.register_namespace('', SVG_NS)
 ET.register_namespace('xlink', XLINK_NS)
-ET.register_namespace('serif', SERIF_NS)
 
 
 # ---------------------------------------------------------------------------
@@ -101,10 +99,8 @@ def annotate(input_path, output_path):
     # ---- Buckets ----
     ddd_paths = []    # step LEDs
     circles = []      # play button
-    pad_groups = []   # drum pad <g> elements
+    pad_groups = []   # drum pad <g> elements: (elem, track_num)
     sample_selects = []  # sample select arrow buttons
-
-    SERIF_ID = f'{{{SERIF_NS}}}id'
 
     for elem in all_elements:
         tag = elem.tag.split('}')[-1]
@@ -115,17 +111,10 @@ def annotate(input_path, output_path):
             circles.append(elem)
 
         elif tag == 'g':
-            # Drum pads: serif:id="drumpad" (or plain id="drumpad" on the first one)
-            if elem.get(SERIF_ID) == 'drumpad' or elem.get('id') == 'drumpad':
-                # polar() can't handle <g>; use centroid of first path child
-                first_path = next(
-                    (c for c in elem if c.tag.split('}')[-1] == 'path'), None
-                )
-                if first_path is not None:
-                    g_dist, g_angle = polar(first_path)
-                else:
-                    g_dist, g_angle = dist, angle
-                pad_groups.append((elem, g_dist, g_angle))
+            # Drum pads: id="drumpad-{1-4}" in the refactored source SVG
+            m = re.match(r'^drumpad-([1-4])$', elem.get('id', ''))
+            if m:
+                pad_groups.append((elem, int(m.group(1))))
 
         elif tag == 'path':
             # --- Sample select buttons (IDs already set in source SVG) ---
@@ -182,9 +171,8 @@ def annotate(input_path, output_path):
         t = track_from_angle(a)
         set_attr(e, f'pitch-knob-{t}', 'control knob pitch-knob')
 
-    # ---- Drum pads: <g serif:id="drumpad"> groups, one per quadrant ----
-    for e, d, a in pad_groups:
-        t = track_from_angle(a)
+    # ---- Drum pads: id="drumpad-{1-4}" from source SVG ----
+    for e, t in pad_groups:
         set_attr(e, f'pad-{t}', 'control pad')
 
     # ---- Step LEDs: sort by polar angle, assign sequential IDs ----
@@ -210,7 +198,7 @@ def annotate(input_path, output_path):
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
-    print(f"  Drum pads:           {len(pad_groups)}")
+    print(f"  Drum pads:           {len(pad_groups)}/4")
     print(f"  Step LEDs:           {len(leds)}")
     status = "OK" if len(sample_selects) == 8 and not missing_selects else "INCOMPLETE"
     print(f"  Sample selects:      {len(sample_selects)}/8 [{status}]")
