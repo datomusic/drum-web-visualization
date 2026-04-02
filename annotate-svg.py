@@ -124,14 +124,6 @@ def annotate(input_path, output_path):
             elif fill == '#0084ff':
                 set_attr(elem, 'btn-filter', 'control button')
 
-            elif fill == '#424242':
-                # Part of the swing actuator (alongside swing-bar-0..2)
-                set_attr(elem, 'swing-actuator', 'swing-actuator')
-
-            elif fill == '#737373':
-                # Three swing bars on the left, sorted by y later
-                ddd_paths.append(('swing', elem, dist, angle))
-
             elif fill == '#414141':
                 # Four knob-indicator tick-marks, one per diagonal quadrant
                 ddd_paths.append(('indicator', elem, dist, angle))
@@ -154,13 +146,6 @@ def annotate(input_path, output_path):
     for i, c in enumerate(circles):
         label = 'play-outer' if i == 0 else 'play-inner'
         set_attr(c, label, 'control play-btn')
-
-    # ---- Swing bars: sort by y position (ascending = top-to-bottom) ----
-    swing_elems = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'swing']
-    # sort by cy
-    swing_elems.sort(key=lambda x: path_abs_centroid(x[0].get('d', ''))[1])
-    for i, (e, d, a) in enumerate(swing_elems):
-        set_attr(e, f'swing-bar-{i}', 'swing-bar')
 
     # ---- Knob indicators: sorted by angle → assign to tracks ----
     indicators = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'indicator']
@@ -197,7 +182,6 @@ def annotate(input_path, output_path):
 
     print(f"Annotated SVG written to: {output_path}")
     print(f"  Play button circles: {len(circles)}")
-    print(f"  Swing bars:          {len(swing_elems)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch knobs:         {len(pitch_knobs)}")
     print(f"  Drum pads:           {len(pads)}")
