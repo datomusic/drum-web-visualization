@@ -163,13 +163,26 @@ def annotate(input_path, output_path):
     for e, t in pad_groups:
         set_attr(e, f'drumpad-{t}', 'control pad')
 
-    # ---- Step LEDs: sort by polar angle, assign sequential IDs ----
+    # ---- Step LEDs: outer ring first, then inner; each sorted by polar angle ----
     leds = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'led']
 
-    # Sort ring LEDs by polar angle (-180→+180)
-    leds.sort(key=lambda x: x[2])
+    # Split into 4 rings by finding the 3 largest distance gaps, outermost first
+    leds_by_dist = sorted(leds, key=lambda x: x[1])
+    gaps = sorted(
+        [(leds_by_dist[i+1][1] - leds_by_dist[i][1], i) for i in range(len(leds_by_dist) - 1)],
+        reverse=True
+    )
+    split_indices = sorted(idx + 1 for _, idx in gaps[:3])
+    rings = []
+    prev = 0
+    for idx in split_indices + [len(leds_by_dist)]:
+        rings.append(leds_by_dist[prev:idx])
+        prev = idx
+    rings.reverse()  # outermost first
+    RING_OFFSET = 2  # rotate each ring so old step-02 becomes step-00
+    ordered = [led for ring in rings for led in (lambda s: s[RING_OFFSET:] + s[:RING_OFFSET])(sorted(ring, key=lambda x: x[2]))]
 
-    for i, (e, d, a) in enumerate(leds):
+    for i, (e, d, a) in enumerate(ordered):
         set_attr(e, f'step-{i:02d}', 'step-led')
 
     # Write output
