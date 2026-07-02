@@ -80,6 +80,14 @@ function handleNoteOn({ note, velocity }) {
   const pad = document.getElementById(ctrl.padId);
   if (!pad) return;
 
+  // Dynamic pad color update on hit (based on note definition color)
+  if (ctrl.color) {
+    const path = pad.querySelector('path');
+    if (path) {
+      path.style.fill = ctrl.color;
+    }
+  }
+
   // Intensity via CSS custom property (0-127)
   pad.style.setProperty('--hit-velocity', velocity);
   pad.classList.add('hit');
@@ -150,15 +158,49 @@ function clearAllStepLEDs() {
 // ---------------------------------------------------------------------------
 
 function handleSequencerState({ stepVelocities }) {
+  // 1. Extract active note colors (bytes 32-35)
+  const activeNoteColors = {};
+  if (stepVelocities.length >= 36) {
+    const activeNotes = stepVelocities.slice(32);
+    activeNotes.forEach((note) => {
+      const ctrl = NOTE_CONTROLS[note];
+      if (ctrl && ctrl.color) {
+        // Store color mapped by its logical 1-based track number (1-4)
+        activeNoteColors[ctrl.track] = ctrl.color;
+        // Update pad color as well
+        const pad = document.getElementById(ctrl.padId);
+        if (pad) {
+          const path = pad.querySelector('path');
+          if (path) {
+            path.style.fill = ctrl.color;
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Update step LEDs (setting track colors on lit steps)
   let found = 0, missing = 0;
-  for (const [track, [start, end]] of Object.entries(TRACK_STEP_MAP)) {
+  for (const [trackStr, [start, end]] of Object.entries(TRACK_STEP_MAP)) {
+    const track = parseInt(trackStr, 10); // track is 1-based (1-4)
+    const trackColor = activeNoteColors[track];
+
     for (let step = 0; step <= end - start; step++) {
       const id = STEP_LED_IDS[start + step];
       const el = document.getElementById(id);
       if (!el) { missing++; if (missing === 1) console.warn(`sequencer: element not found: "${id}"`); continue; }
       found++;
-      el.classList.toggle('lit', stepVelocities[track * 8 + step] > 0);
+      
+      // Read step velocities from 0-based array index (track - 1)
+      const isLit = stepVelocities[(track - 1) * 8 + step] > 0;
+      el.classList.toggle('lit', isLit);
+      if (isLit && trackColor) {
+        el.style.fill = trackColor;
+      } else {
+        el.style.fill = '';
+      }
     }
   }
+
   console.log(`sequencer: updated ${found} LEDs, ${missing} missing`);
 }
