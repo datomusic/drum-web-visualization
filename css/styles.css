@@ -77,7 +77,6 @@ body {
 #control-panel label {
   display: block;
   font-size: var(--text-s);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -87,11 +86,13 @@ body {
   margin-top: var(--space-s);
   padding: var(--space-s) var(--space-s);
   font-family: var(--font-base);
-  font-size: var(--text-m);
+  font-size: var(--text-s);
   color: var(--color-text);
   background: #fff;
   border: 1px solid var(--color-text);
   border-radius: 999px;
+  text-align: center;
+  text-align-last: center;
 }
 
 #control-panel fieldset {
@@ -107,7 +108,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-s);
-  font-size: var(--text-m);
+  font-size: var(--text-s);
   text-transform: none;
   letter-spacing: normal;
 }
@@ -116,6 +117,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: var(--text-s);
+}
+
+#control-panel .checkbox-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-m);
 }
 
 #reboot-bootloader {
