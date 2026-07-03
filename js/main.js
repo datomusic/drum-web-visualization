@@ -4,13 +4,55 @@
  * Also handles the ?debug=1 overlay mode.
  */
 
-import { initMIDI } from './midi.js';
+import {
+  initMIDI, setSetting, rebootToBootloader,
+  SETTING_MIDI_CHANNEL, SETTING_SLIDER_MODE,
+} from './midi.js';
 import { initVisualizer } from './visualizer.js';
 
 const statusEl = document.getElementById('midi-status');
 
 initVisualizer();
 initMIDI(statusEl);
+initControlPanel();
+
+// ---------------------------------------------------------------------------
+// Control panel — MIDI channel, slider mode, reboot
+// ---------------------------------------------------------------------------
+
+function initControlPanel() {
+  const channelSelect = document.getElementById('midi-channel');
+  const paramBoxes = [...document.querySelectorAll('#control-panel input[name="param"]')];
+  const rebootButton = document.getElementById('reboot-bootloader');
+  const paramBits = { pitch: 1, gain: 2, decay: 4 };
+
+  channelSelect.addEventListener('change', () => {
+    setSetting(SETTING_MIDI_CHANNEL, parseInt(channelSelect.value, 10));
+  });
+
+  for (const box of paramBoxes) {
+    box.addEventListener('change', () => {
+      const mask = paramBoxes.reduce((m, b) => m | (b.checked ? paramBits[b.value] : 0), 0);
+      setSetting(SETTING_SLIDER_MODE, mask);
+    });
+  }
+
+  rebootButton.addEventListener('click', () => {
+    if (confirm('Reboot the DRUM into USB bootloader mode?')) rebootToBootloader();
+  });
+
+  // Reflect device state (queried on connect) back into the UI.
+  document.addEventListener('midi-setting', (e) => {
+    const { id, value } = e.detail;
+    if (id === SETTING_MIDI_CHANNEL) {
+      channelSelect.value = String(value);
+    } else if (id === SETTING_SLIDER_MODE) {
+      for (const box of paramBoxes) {
+        box.checked = (value & paramBits[box.value]) !== 0;
+      }
+    }
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Debug overlay — add ?debug=1 to the URL to show element IDs
