@@ -8,9 +8,10 @@ body {
   margin: 0;
   background: #1a1a1a;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 2rem;
   min-height: 100vh;
   font-family: sans-serif;
 }
@@ -30,6 +31,12 @@ body {
 }
 
 /* ---- MIDI status bar ---- */
+
+#control-panel {
+  flex: 1;
+  align-self: stretch;
+  background: #ddd;
+}
 
 #midi-status {
   margin-top: 1rem;
