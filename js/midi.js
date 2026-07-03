@@ -30,7 +30,7 @@ const TAG_SET_SETTING              = 0x42;
 export const SETTING_MIDI_CHANNEL = 0x01;
 export const SETTING_SLIDER_MODE  = 0x02;
 
-const SEQUENCER_POLL_INTERVAL_MS = 1000;
+const SEQUENCER_POLL_INTERVAL_MS = 200;
 
 let midiAccess = null;
 let pollTimer = null;
