@@ -1,5 +1,34 @@
 /* styles.css — base layout + state classes for the Dato DRUM visualizer */
 
+:root {
+  --font-base: 'Sailec-Medium', 'Helvetica', 'Arial', sans-serif;
+
+  /* Type scale (fluid). Use these instead of ad-hoc clamp() expressions. */
+  --text-s: clamp(14px, 0.7rem + 0.4vw, 15px);
+  --text-m: clamp(17px, 0.9rem + 1vw, 21px);
+  --text-l: clamp(21px, 3.5vw, 28px);
+  --text-xl: clamp(24px, 5vw, 40px);
+
+  /* Spacing scale */
+  --space-s: 4px;
+  --space-m: 0.5em;
+  --space-l: 40px;
+
+  --color-text: #000000;
+  --color-green: #00d170;
+  --color-yellow: #fd3;
+  --color-blue: #66c2ff;
+  --color-light-blue: #89c9e7;
+  --color-light-green: #57e6bc;
+  --color-red: #f00;
+  --color-gray: #eee;
+  --color-teal: #00ae8e;
+  /* Approximate header height: used only for padding-top on non-landing pages.
+     A slightly-off value shifts inner content up/down; it no longer causes a
+     white band on the landing hero (which fills y=0 via grid overlap). */
+  --header-height: 78px;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -13,7 +42,7 @@ body {
   justify-content: center;
   gap: 2rem;
   min-height: 100vh;
-  font-family: sans-serif;
+  font-family: var(--font-base);
 }
 
 /* ---- Visualization container ---- */
@@ -35,13 +64,77 @@ body {
 #control-panel {
   flex: 1;
   align-self: stretch;
-  background: #ddd;
+  background: var(--color-gray);
+  color: var(--color-text);
+  font-family: var(--font-base);
+  font-size: var(--text-s);
+  padding: var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+#control-panel label {
+  display: block;
+  font-size: var(--text-s);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#control-panel select {
+  display: block;
+  width: auto;
+  margin-top: var(--space-s);
+  padding: var(--space-s) var(--space-s);
+  font-family: var(--font-base);
+  font-size: var(--text-m);
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-text);
+  border-radius: 999px;
+}
+
+#control-panel fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+#control-panel fieldset label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  font-size: var(--text-m);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+#control-panel fieldset > label:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-s);
+}
+
+#reboot-bootloader {
+  align-self: flex-start;
+  font-family: var(--font-base);
+  font-size: var(--text-s);
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--color-green);
+  border: none;
+  border-radius: 999px;
+  padding: var(--space-m) var(--space-l);
+  cursor: pointer;
 }
 
 #midi-status {
-  margin-top: 1rem;
-  color: #888;
-  font-size: 0.85rem;
+  margin-top: auto;
+  color: var(--color-teal);
+  font-size: var(--text-s);
   letter-spacing: 0.03em;
 }
 
