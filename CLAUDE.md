@@ -4,13 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the project
 
-ES modules require HTTP — open via a local server:
+ES modules require HTTP — open via a local server. Vite gives live reload (CSS hot-swaps, JS/HTML edits reload the page):
 
 ```bash
-python3 -m http.server 8080
-# http://localhost:8080
-# http://localhost:8080?debug=1   — SVG ID overlay + MIDI console logging
+npm install   # once
+npm run dev
+# http://localhost:5173
+# http://localhost:5173?debug=1   — SVG ID overlay + MIDI console logging
 ```
+
+Vite is dev-server only — there is no build step. Any static server also works (`python3 -m http.server 8080`).
 
 ## Regenerating the annotated SVG
 

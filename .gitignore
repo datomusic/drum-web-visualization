@@ -1,2 +1,5 @@
 .DS_Store
 *.svg
+node_modules/
+.claude/*
+!.claude/launch.json
