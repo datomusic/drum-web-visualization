@@ -51,8 +51,8 @@
 
 .test.done { background: var(--color-green); color: #fff; }
 
-/* Target zone: the valid center window, drawn as a faint slot behind the cursor */
-.test.centered-test::before {
+/* Rest zone: the window the control must be left in, drawn as a faint band behind the cursor */
+.test.has-rest::before {
   content: '';
   position: absolute;
   top: 0;
@@ -62,7 +62,7 @@
   background: rgba(0, 0, 0, 0.08);
   pointer-events: none;
 }
-.test.done.centered-test::before {
+.test.done.has-rest::before {
   background: rgba(0, 0, 0, 0.12);
 }
 
@@ -80,7 +80,7 @@
   transition: left 60ms ease-out;
 }
 
-/* Detent: a quick physical punch the moment the cursor lands in the zone */
+/* Punch: a quick physical bump the moment the item passes */
 .test.snap {
   animation: detent 220ms cubic-bezier(0.2, 1.6, 0.4, 1);
 }

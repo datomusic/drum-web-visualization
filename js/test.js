@@ -18,31 +18,30 @@ const CC_MAX = 127;
 // Percentage of the 0–127 range a control must sweep to pass (centered on the range).
 const COVERAGE_PCT = 90;
 
-// A control that must be returned to center passes only when its current
-// value is within CENTER ± CENTER_TOLERANCE (i.e. 60–66).
-const CENTER = 63;
-const CENTER_TOLERANCE = 3;
+// Rest windows [lo, hi] (inclusive): where a control must be left for the test to pass.
+const REST_CENTER = [60, 66]; // sliders / pots returned to the middle
+const REST_LOW = [0, 4];      // pads released
 
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
  * type:
  *   'firmware' — passes when a firmware version response is received
  *   'cc'       — passes when the CC has been received across the required range;
- *                with `center: true` it must additionally be left at the middle position
+ *                with `rest: [lo, hi]` it must additionally be left within that window
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
-  { id: 'slider-1',  label: 'Slider 1',         type: 'cc', cc: 21, center: true },
-  { id: 'slider-2',  label: 'Slider 2',         type: 'cc', cc: 22, center: true },
-  { id: 'slider-3',  label: 'Slider 3',         type: 'cc', cc: 23, center: true },
-  { id: 'slider-4',  label: 'Slider 4',         type: 'cc', cc: 24, center: true },
-  { id: 'pot-volume',    label: 'Volume pot',    type: 'cc', cc: 7,  center: true },
-  { id: 'pot-tempo',     label: 'Tempo pot',     type: 'cc', cc: 15, center: true },
-  { id: 'swing',     label: 'Swing switch',     type: 'cc', cc: 9, center: true },
-  { id: 'pad-crush',  label: 'Crush pad',  type: 'cc', cc: 12 },
-  { id: 'pad-random', label: 'Random pad', type: 'cc', cc: 16 },
-  { id: 'pad-repeat', label: 'Repeat pad', type: 'cc', cc: 17 },
-  { id: 'pad-filter', label: 'Filter pad', type: 'cc', cc: 74 },
+  { id: 'slider-1',   label: 'Slider 1',     type: 'cc', cc: 21, rest: REST_CENTER },
+  { id: 'slider-2',   label: 'Slider 2',     type: 'cc', cc: 22, rest: REST_CENTER },
+  { id: 'slider-3',   label: 'Slider 3',     type: 'cc', cc: 23, rest: REST_CENTER },
+  { id: 'slider-4',   label: 'Slider 4',     type: 'cc', cc: 24, rest: REST_CENTER },
+  { id: 'pot-volume', label: 'Volume pot',   type: 'cc', cc: 7,  rest: REST_CENTER },
+  { id: 'pot-tempo',  label: 'Tempo pot',    type: 'cc', cc: 15, rest: REST_CENTER },
+  { id: 'swing',      label: 'Swing switch', type: 'cc', cc: 9,  rest: REST_CENTER },
+  { id: 'pad-crush',  label: 'Crush pad',    type: 'cc', cc: 12, rest: REST_LOW },
+  { id: 'pad-random', label: 'Random pad',   type: 'cc', cc: 16, rest: REST_LOW },
+  { id: 'pad-repeat', label: 'Repeat pad',   type: 'cc', cc: 17, rest: REST_LOW },
+  { id: 'pad-filter', label: 'Filter pad',   type: 'cc', cc: 74, rest: REST_LOW },
 ];
 
 const listEl = document.getElementById('test-list');
@@ -83,9 +82,9 @@ function resetTests() {
   state = {};
   for (const t of TESTS) {
     if (t.type === 'firmware') {
-      state[t.id] = { version: null };
+      state[t.id] = { version: null, wasPassed: false };
     } else if (t.type === 'cc') {
-      state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasCentered: false };
+      state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasPassed: false };
     }
   }
   buildList();
@@ -102,14 +101,14 @@ function rangeCovered(m, { lo, hi }) {
   return m.seen && m.min <= lo && m.max >= hi;
 }
 
-function isCentered(m) {
-  return m.current !== null && Math.abs(m.current - CENTER) <= CENTER_TOLERANCE;
+function atRest(t, m) {
+  return m.current !== null && m.current >= t.rest[0] && m.current <= t.rest[1];
 }
 
 function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
-  return rangeCovered(m, th) && (!t.center || isCentered(m));
+  return rangeCovered(m, th) && (!t.rest || atRest(t, m));
 }
 
 /** Fill band [start, end] as fractions (0–1) of 0–127: the visited min..max range. */
@@ -125,10 +124,10 @@ function buildList() {
   for (const t of TESTS) {
     const li = document.createElement('li');
     li.className = 'test';
-    if (t.center) {
-      li.classList.add('centered-test');
-      li.style.setProperty('--zone-start', (CENTER - CENTER_TOLERANCE) / CC_MAX);
-      li.style.setProperty('--zone-end', (CENTER + CENTER_TOLERANCE + 1) / CC_MAX);
+    if (t.rest) {
+      li.classList.add('has-rest');
+      li.style.setProperty('--zone-start', t.rest[0] / CC_MAX);
+      li.style.setProperty('--zone-end', (t.rest[1] + 1) / CC_MAX);
     }
     const title = document.createElement('div');
     title.className = 'test-title';
@@ -156,18 +155,16 @@ function render() {
     const li = m.el;
     const passed = testPassed(t, th);
     li.classList.toggle('done', passed);
+    // Punch once when the item turns green.
+    if (passed && !m.wasPassed) punch(li);
+    m.wasPassed = passed;
     const [start, end] = fillBand(t);
     li.style.setProperty('--fill-start', start);
     li.style.setProperty('--fill-end', end);
 
     if (t.type === 'cc' && m.current !== null) {
-      const centered = t.center && isCentered(m);
       li.classList.add('has-cursor');
-      li.classList.toggle('in-zone', centered);
       li.style.setProperty('--cursor', m.current / CC_MAX);
-      // Punch once when the cursor first enters the center window.
-      if (centered && !m.wasCentered) punch(li);
-      m.wasCentered = centered;
     }
 
     const detail = li.querySelector('.test-detail');
@@ -177,7 +174,7 @@ function render() {
       detail.textContent = 'not received';
     } else {
       const parts = [`range ${m.min} – ${m.max}${rangeCovered(m, th) ? ' ✓' : ''}`];
-      parts.push(`now ${m.current}${t.center ? (isCentered(m) ? ' ✓' : ' → center') : ''}`);
+      parts.push(`now ${m.current}${t.rest ? (atRest(t, m) ? ' ✓' : ` → ${t.rest[0]}–${t.rest[1]}`) : ''}`);
       detail.textContent = parts.join('   ·   ');
     }
   }
