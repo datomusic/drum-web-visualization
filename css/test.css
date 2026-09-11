@@ -54,12 +54,17 @@
   gap: var(--space-m);
   padding: var(--space-s) var(--space-l);
   border-radius: 12px;
-  background: var(--color-gray);
-  transition: background 0.15s;
+  /* Fill: light blue band spanning the visited min..max range (0–127) */
+  --fill-start: 0;
+  --fill-end: 0;
+  background: linear-gradient(to right,
+    var(--color-gray) calc(var(--fill-start) * 100%),
+    var(--color-light-blue) calc(var(--fill-start) * 100%),
+    var(--color-light-blue) calc(var(--fill-end) * 100%),
+    var(--color-gray) calc(var(--fill-end) * 100%));
 }
 
-.test.in-progress { background: var(--color-light-blue); }
-.test.done        { background: var(--color-green); color: #fff; }
+.test.done { background: var(--color-green); color: #fff; }
 
 .test-title {
   font-size: var(--text-m);

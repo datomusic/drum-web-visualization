@@ -112,23 +112,24 @@ function testPassed(t, th) {
   return rangeCovered(m, th) && (!t.center || isCentered(m));
 }
 
+/** Fill band [start, end] as fractions (0–1) of 0–127: the visited min..max range. */
+function fillBand(t) {
+  const m = state[t.id];
+  if (t.type === 'firmware') return m.version !== null ? [0, 1] : [0, 0];
+  return m.seen ? [m.min / CC_MAX, m.max / CC_MAX] : [0, 0];
+}
+
 function render() {
   const th = thresholds();
-  let inProgressAssigned = false;
   listEl.innerHTML = '';
 
   for (const t of TESTS) {
     const passed = testPassed(t, th);
-    let status = 'pending';
-    if (passed) {
-      status = 'done';
-    } else if (!inProgressAssigned) {
-      status = 'in-progress';
-      inProgressAssigned = true;
-    }
-
     const li = document.createElement('li');
-    li.className = `test ${status}`;
+    li.className = `test ${passed ? 'done' : ''}`;
+    const [start, end] = fillBand(t);
+    li.style.setProperty('--fill-start', start);
+    li.style.setProperty('--fill-end', end);
 
     const title = document.createElement('div');
     title.className = 'test-title';
