@@ -30,7 +30,8 @@ const REST_LOW = [0, 4];      // pads released
  *   'cc'       — passes when the CC has been received across the required range;
  *                with `rest: [lo, hi]` it must additionally be left within that window
  *   'notes'    — passes once every note of the given track (from NOTE_CONTROLS) has
- *                been received at least once; the bar fills per note in the note's color
+ *                been received at least once; the bar fills per note in the note's color.
+ *                With `rest: note` that note must additionally be the last one received
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -45,10 +46,10 @@ const TESTS = [
   { id: 'pad-random', label: 'Random pad',   type: 'cc', cc: 16, rest: REST_LOW },
   { id: 'pad-repeat', label: 'Repeat pad',   type: 'cc', cc: 17, rest: REST_LOW },
   { id: 'pad-filter', label: 'Filter pad',   type: 'cc', cc: 74, rest: REST_LOW },
-  { id: 'notes-1',    label: 'Track 1 notes', type: 'notes', track: 1 },
-  { id: 'notes-2',    label: 'Track 2 notes', type: 'notes', track: 2 },
-  { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3 },
-  { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4 },
+  { id: 'notes-1',    label: 'Track 1 notes', type: 'notes', track: 1, rest: 36 },
+  { id: 'notes-2',    label: 'Track 2 notes', type: 'notes', track: 2, rest: 38 },
+  { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3, rest: 46 },
+  { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4, rest: 54 },
 ];
 
 /** Notes belonging to a track, ordered by sample number. */
@@ -96,10 +97,10 @@ document.addEventListener('midi-note-on', e => {
   for (const t of TESTS) {
     if (t.type !== 'notes') continue;
     const m = state[t.id];
-    if (note in m.heard && !m.heard[note]) {
-      m.heard[note] = true;
-      touched = true;
-    }
+    if (!(note in m.heard)) continue;
+    m.heard[note] = true;
+    m.last = note;
+    touched = true;
   }
   if (touched) render();
 });
@@ -115,7 +116,7 @@ function resetTests() {
       state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasPassed: false };
     } else if (t.type === 'notes') {
       const notes = trackNotes(t.track);
-      state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), wasPassed: false };
+      state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), last: null, wasPassed: false };
     }
   }
   buildList();
@@ -139,7 +140,7 @@ function atRest(t, m) {
 function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
-  if (t.type === 'notes') return m.notes.every(n => m.heard[n.note]);
+  if (t.type === 'notes') return m.notes.every(n => m.heard[n.note]) && (!t.rest || m.last === t.rest);
   return rangeCovered(m, th) && (!t.rest || atRest(t, m));
 }
 
@@ -156,10 +157,16 @@ function buildList() {
   for (const t of TESTS) {
     const li = document.createElement('li');
     li.className = 'test';
-    if (t.rest) {
+    if (t.type === 'cc' && t.rest) {
       li.classList.add('has-rest');
       li.style.setProperty('--zone-start', t.rest[0] / CC_MAX);
       li.style.setProperty('--zone-end', (t.rest[1] + 1) / CC_MAX);
+    } else if (t.type === 'notes' && t.rest) {
+      const notes = state[t.id].notes;
+      const i = notes.findIndex(n => n.note === t.rest);
+      li.classList.add('has-rest');
+      li.style.setProperty('--zone-start', i / notes.length);
+      li.style.setProperty('--zone-end', (i + 1) / notes.length);
     }
     const title = document.createElement('div');
     title.className = 'test-title';
@@ -202,6 +209,11 @@ function render() {
         return `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`;
       });
       li.style.background = passed ? '' : `linear-gradient(to right, ${stops.join(', ')})`;
+      if (m.last !== null) {
+        const i = m.notes.findIndex(x => x.note === m.last);
+        li.classList.add('has-cursor');
+        li.style.setProperty('--cursor', (i + 0.5) / n);
+      }
     }
 
     if (t.type === 'cc' && m.current !== null) {
@@ -214,7 +226,9 @@ function render() {
       detail.textContent = m.version ?? '—';
     } else if (t.type === 'notes') {
       const heard = m.notes.filter(n => m.heard[n.note]).length;
-      detail.textContent = `${heard} / ${m.notes.length} notes`;
+      const parts = [`${heard} / ${m.notes.length} notes`];
+      if (t.rest && m.last !== null) parts.push(m.last === t.rest ? `last ${m.last} ✓` : `last ${m.last} → ${t.rest}`);
+      detail.textContent = parts.join('   ·   ');
     } else if (!m.seen) {
       detail.textContent = 'not received';
     } else {
