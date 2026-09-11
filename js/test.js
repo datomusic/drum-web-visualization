@@ -130,6 +130,10 @@ function render() {
     const [start, end] = fillBand(t);
     li.style.setProperty('--fill-start', start);
     li.style.setProperty('--fill-end', end);
+    if (t.type === 'cc' && state[t.id].current !== null) {
+      li.classList.add('has-cursor');
+      li.style.setProperty('--cursor', state[t.id].current / CC_MAX);
+    }
 
     const title = document.createElement('div');
     title.className = 'test-title';

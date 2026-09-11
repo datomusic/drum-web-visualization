@@ -54,6 +54,8 @@
   gap: var(--space-m);
   padding: var(--space-s) var(--space-l);
   border-radius: 12px;
+  position: relative;
+  overflow: hidden;
   /* Fill: light blue band spanning the visited min..max range (0–127) */
   --fill-start: 0;
   --fill-end: 0;
@@ -65,6 +67,18 @@
 }
 
 .test.done { background: var(--color-green); color: #fff; }
+
+/* Cursor: white bar at the current CC value (0–1 across the width) */
+.test.has-cursor::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--cursor) * (100% - 3px));
+  width: 3px;
+  background: #fff;
+  pointer-events: none;
+}
 
 .test-title {
   font-size: var(--text-m);
