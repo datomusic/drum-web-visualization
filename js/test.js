@@ -5,7 +5,6 @@
  * Each test item watches a set of MIDI CCs. A CC-based test passes once every
  * one of its CCs has been received AND the observed values span the required
  * portion of the 0–127 range (min ≤ lo threshold, max ≥ hi threshold).
- * The coverage percentage is configurable in the panel.
  *
  * The test list is cleared and restarted every time a DRUM connects.
  */
@@ -16,10 +15,13 @@ import { initVisualizer } from './visualizer.js';
 const CC_MIN = 0;
 const CC_MAX = 127;
 
+// Percentage of the 0–127 range a control must sweep to pass (centered on the range).
+const COVERAGE_PCT = 90;
+
 // A control that must be returned to center passes only when its current
-// value is within this many steps of the midpoint (64).
-const CENTER = 64;
-const CENTER_TOLERANCE = 6;
+// value is within CENTER ± CENTER_TOLERANCE (i.e. 60–66).
+const CENTER = 63;
+const CENTER_TOLERANCE = 3;
 
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
@@ -44,7 +46,6 @@ const TESTS = [
 ];
 
 const listEl = document.getElementById('test-list');
-const coverageEl = document.getElementById('coverage');
 const statusEl = document.getElementById('midi-status');
 
 // Mutable per-run state, keyed by test id.
@@ -75,7 +76,6 @@ document.addEventListener('midi-cc', e => {
   }
   if (touched) render();
 });
-coverageEl.addEventListener('input', render);
 
 // ---------------------------------------------------------------------------
 
@@ -91,10 +91,9 @@ function resetTests() {
   render();
 }
 
-/** Required [lo, hi] thresholds for the configured coverage percentage. */
+/** Required [lo, hi] thresholds for COVERAGE_PCT. */
 function thresholds() {
-  const pct = Math.min(100, Math.max(1, parseInt(coverageEl.value, 10) || 100));
-  const margin = Math.round((CC_MAX - CC_MIN) * (1 - pct / 100) / 2);
+  const margin = Math.round((CC_MAX - CC_MIN) * (1 - COVERAGE_PCT / 100) / 2);
   return { lo: CC_MIN + margin, hi: CC_MAX - margin };
 }
 
