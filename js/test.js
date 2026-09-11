@@ -6,7 +6,7 @@
  * one of its CCs has been received AND the observed values span the required
  * portion of the 0–127 range (min ≤ lo threshold, max ≥ hi threshold).
  *
- * The test list is cleared and restarted every time a DRUM connects.
+ * The test list is cleared and restarted every time a DRUM connects or disconnects.
  */
 
 import { initMIDI } from './midi.js';
@@ -71,6 +71,7 @@ initMIDI(statusEl);
 resetTests();
 
 document.addEventListener('midi-connected', resetTests);
+document.addEventListener('midi-disconnected', resetTests);
 document.addEventListener('midi-firmware-version', e => {
   for (const t of TESTS) {
     if (t.type === 'firmware') state[t.id].version = e.detail.version;

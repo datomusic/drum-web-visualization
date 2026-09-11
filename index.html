@@ -262,9 +262,11 @@
     </label>
     <fieldset>
       <label>Slider</label>
-      <label><input type="checkbox" name="param" value="pitch" checked> pitch</label>
-      <label><input type="checkbox" name="param" value="gain"> gain</label>
-      <label><input type="checkbox" name="param" value="decay"> decay</label>
+      <div class="checkbox-row">
+        <label><input type="checkbox" name="param" value="pitch" checked> pitch</label>
+        <label><input type="checkbox" name="param" value="gain"> gain</label>
+        <label><input type="checkbox" name="param" value="decay"> decay</label>
+      </div>
     </fieldset>
     <button id="reboot-bootloader">Reboot to bootloader</button>
     <div id="midi-status">Requesting MIDI access…</div>
