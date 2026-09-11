@@ -11,6 +11,7 @@
 
 import { initMIDI } from './midi.js';
 import { initVisualizer } from './visualizer.js';
+import { NOTE_CONTROLS } from './controls.js';
 
 const CC_MIN = 0;
 const CC_MAX = 127;
@@ -28,6 +29,8 @@ const REST_LOW = [0, 4];      // pads released
  *   'firmware' — passes when a firmware version response is received
  *   'cc'       — passes when the CC has been received across the required range;
  *                with `rest: [lo, hi]` it must additionally be left within that window
+ *   'notes'    — passes once every note of the given track (from NOTE_CONTROLS) has
+ *                been received at least once; the bar fills per note in the note's color
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -42,7 +45,19 @@ const TESTS = [
   { id: 'pad-random', label: 'Random pad',   type: 'cc', cc: 16, rest: REST_LOW },
   { id: 'pad-repeat', label: 'Repeat pad',   type: 'cc', cc: 17, rest: REST_LOW },
   { id: 'pad-filter', label: 'Filter pad',   type: 'cc', cc: 74, rest: REST_LOW },
+  { id: 'notes-1',    label: 'Track 1 notes', type: 'notes', track: 1 },
+  { id: 'notes-2',    label: 'Track 2 notes', type: 'notes', track: 2 },
+  { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3 },
+  { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4 },
 ];
+
+/** Notes belonging to a track, ordered by sample number. */
+function trackNotes(track) {
+  return Object.entries(NOTE_CONTROLS)
+    .filter(([, n]) => n.track === track)
+    .sort((a, b) => a[1].sample - b[1].sample)
+    .map(([note, n]) => ({ note: Number(note), color: n.color }));
+}
 
 const listEl = document.getElementById('test-list');
 const statusEl = document.getElementById('midi-status');
@@ -75,6 +90,19 @@ document.addEventListener('midi-cc', e => {
   }
   if (touched) render();
 });
+document.addEventListener('midi-note-on', e => {
+  const { note } = e.detail;
+  let touched = false;
+  for (const t of TESTS) {
+    if (t.type !== 'notes') continue;
+    const m = state[t.id];
+    if (note in m.heard && !m.heard[note]) {
+      m.heard[note] = true;
+      touched = true;
+    }
+  }
+  if (touched) render();
+});
 
 // ---------------------------------------------------------------------------
 
@@ -85,6 +113,9 @@ function resetTests() {
       state[t.id] = { version: null, wasPassed: false };
     } else if (t.type === 'cc') {
       state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasPassed: false };
+    } else if (t.type === 'notes') {
+      const notes = trackNotes(t.track);
+      state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), wasPassed: false };
     }
   }
   buildList();
@@ -108,6 +139,7 @@ function atRest(t, m) {
 function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
+  if (t.type === 'notes') return m.notes.every(n => m.heard[n.note]);
   return rangeCovered(m, th) && (!t.rest || atRest(t, m));
 }
 
@@ -162,6 +194,16 @@ function render() {
     li.style.setProperty('--fill-start', start);
     li.style.setProperty('--fill-end', end);
 
+    // Notes: one segment per note, filled in the note's color once heard.
+    if (t.type === 'notes') {
+      const n = m.notes.length;
+      const stops = m.notes.map((note, i) => {
+        const c = m.heard[note.note] ? note.color : 'var(--color-gray)';
+        return `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`;
+      });
+      li.style.background = passed ? '' : `linear-gradient(to right, ${stops.join(', ')})`;
+    }
+
     if (t.type === 'cc' && m.current !== null) {
       li.classList.add('has-cursor');
       li.style.setProperty('--cursor', m.current / CC_MAX);
@@ -170,6 +212,9 @@ function render() {
     const detail = li.querySelector('.test-detail');
     if (t.type === 'firmware') {
       detail.textContent = m.version ?? '—';
+    } else if (t.type === 'notes') {
+      const heard = m.notes.filter(n => m.heard[n.note]).length;
+      detail.textContent = `${heard} / ${m.notes.length} notes`;
     } else if (!m.seen) {
       detail.textContent = 'not received';
     } else {
