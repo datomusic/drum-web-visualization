@@ -25,6 +25,7 @@ export function initVisualizer() {
   document.addEventListener('midi-clock',            () => handleClock());
   document.addEventListener('midi-transport',        e => handleTransport(e.detail));
   document.addEventListener('midi-sequencer-state',  e => handleSequencerState(e.detail));
+  document.addEventListener('midi-disconnected',     () => handleDisconnect());
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +151,18 @@ function handleTransport({ type }) {
 function clearAllStepLEDs() {
   for (const id of STEP_LED_IDS) {
     document.getElementById(id)?.classList.remove('active');
+  }
+}
+
+/** Device gone: stop the transport and blank every step LED (playhead + pattern). */
+function handleDisconnect() {
+  isPlaying = false;
+  document.getElementById('play-outer')?.classList.remove('playing');
+  for (const id of STEP_LED_IDS) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.classList.remove('active', 'lit');
+    el.style.fill = '';
   }
 }
 
