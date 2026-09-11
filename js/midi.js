@@ -99,6 +99,7 @@ export async function initMIDI(statusEl) {
     if (count > 0) {
       deviceName = names;
       updateConnectedStatus();
+      dispatch('midi-connected', { name: names });
       onConnected();
     } else {
       setStatus('No MIDI inputs found. Plug in the Dato DRUM.');

@@ -1,0 +1,78 @@
+/* test.css — production test panel (test.html) */
+
+#test-panel {
+  flex: 1;
+  align-self: stretch;
+  background: #fff;
+  color: var(--color-text);
+  font-family: var(--font-base);
+  font-size: var(--text-s);
+  padding: var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  overflow-y: auto;
+}
+
+#test-panel h1 {
+  margin: 0 0 var(--space-m);
+  font-size: var(--text-l);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#test-panel .coverage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin-bottom: var(--space-m);
+}
+
+#test-panel .coverage input {
+  width: 4em;
+  font-family: var(--font-base);
+  font-size: var(--text-s);
+  padding: var(--space-s);
+  border: 1px solid var(--color-text);
+  border-radius: 999px;
+  text-align: center;
+}
+
+#test-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.test {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding: var(--space-s) var(--space-l);
+  border-radius: 12px;
+  background: var(--color-gray);
+  transition: background 0.15s;
+}
+
+.test.in-progress { background: var(--color-light-blue); }
+.test.done        { background: var(--color-green); color: #fff; }
+
+.test-title {
+  font-size: var(--text-m);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.test-detail {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  opacity: 0.8;
+}
+
+.test-detail {
+  white-space: pre;
+}
