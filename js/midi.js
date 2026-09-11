@@ -42,7 +42,38 @@ function sendSysEx(bytes) {
   if (!midiAccess) return;
   const msg = [...SYSEX_HEADER, ...bytes, 0xF7];
   for (const output of midiAccess.outputs.values()) {
+    // Sending on a disconnected port throws InvalidStateError; skip stale ports
+    if (output.state !== 'connected') continue;
     output.send(msg);
+  }
+}
+
+// After a hot-plug the input port reports 'connected' before the output port
+// does (and before the device is ready to answer), so a single request is lost.
+// Retry the firmware version request until a response arrives.
+const VERSION_RETRY_INTERVAL_MS = 500;
+const VERSION_RETRY_MAX = 10;
+let versionRetryTimer = null;
+
+function requestFirmwareVersionWithRetry() {
+  stopVersionRetry();
+  let attempts = 0;
+  const attempt = () => {
+    if (firmwareVersion !== null || attempts >= VERSION_RETRY_MAX) {
+      stopVersionRetry();
+      return;
+    }
+    attempts++;
+    requestFirmwareVersion();
+  };
+  attempt();
+  versionRetryTimer = setInterval(attempt, VERSION_RETRY_INTERVAL_MS);
+}
+
+function stopVersionRetry() {
+  if (versionRetryTimer !== null) {
+    clearInterval(versionRetryTimer);
+    versionRetryTimer = null;
   }
 }
 
@@ -83,7 +114,7 @@ export async function initMIDI(statusEl) {
   }
 
   function onConnected() {
-    requestFirmwareVersion();
+    requestFirmwareVersionWithRetry();
     getSetting(SETTING_MIDI_CHANNEL);
     getSetting(SETTING_SLIDER_MODE);
     startPolling();
@@ -110,7 +141,11 @@ export async function initMIDI(statusEl) {
 
   midiAccess.onstatechange = (e) => {
     const port = e.port;
-    if (port.type !== 'input') return;
+    if (port.type === 'output') {
+      // Output port came up after the input: (re)send the initial requests now
+      if (port.state === 'connected' && deviceName && firmwareVersion === null) onConnected();
+      return;
+    }
     if (port.state === 'connected') {
       port.onmidimessage = onMessage;
       deviceName = port.name;
@@ -120,6 +155,7 @@ export async function initMIDI(statusEl) {
       onConnected();
     } else {
       stopPolling();
+      stopVersionRetry();
       deviceName = null;
       firmwareVersion = null;
       setStatus(`Disconnected: ${port.name}`);
@@ -164,6 +200,7 @@ function parseSysEx(data) {
     dispatch('midi-sequencer-state', { stepVelocities });
   } else if (tag === TAG_FIRMWARE_VERSION_REQUEST) {
     firmwareVersion = decodeVersion(payload);
+    stopVersionRetry();
     console.log(`sysex: firmware version ${firmwareVersion}`);
     updateConnectedStatus();
     dispatch('midi-firmware-version', { version: firmwareVersion });
