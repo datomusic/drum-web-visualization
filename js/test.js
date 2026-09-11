@@ -85,9 +85,10 @@ function resetTests() {
     if (t.type === 'firmware') {
       state[t.id] = { version: null };
     } else if (t.type === 'cc') {
-      state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null };
+      state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasCentered: false };
     }
   }
+  buildList();
   render();
 }
 
@@ -118,30 +119,58 @@ function fillBand(t) {
   return m.seen ? [m.min / CC_MAX, m.max / CC_MAX] : [0, 0];
 }
 
-function render() {
-  const th = thresholds();
+/** Build one persistent <li> per test; render() updates them in place. */
+function buildList() {
   listEl.innerHTML = '';
-
   for (const t of TESTS) {
-    const passed = testPassed(t, th);
     const li = document.createElement('li');
-    li.className = `test ${passed ? 'done' : ''}`;
-    const [start, end] = fillBand(t);
-    li.style.setProperty('--fill-start', start);
-    li.style.setProperty('--fill-end', end);
-    if (t.type === 'cc' && state[t.id].current !== null) {
-      li.classList.add('has-cursor');
-      li.style.setProperty('--cursor', state[t.id].current / CC_MAX);
+    li.className = 'test';
+    if (t.center) {
+      li.classList.add('centered-test');
+      li.style.setProperty('--zone-start', (CENTER - CENTER_TOLERANCE) / CC_MAX);
+      li.style.setProperty('--zone-end', (CENTER + CENTER_TOLERANCE + 1) / CC_MAX);
     }
-
     const title = document.createElement('div');
     title.className = 'test-title';
     title.textContent = t.label;
-    li.appendChild(title);
-
     const detail = document.createElement('div');
     detail.className = 'test-detail';
+    li.append(title, detail);
+    listEl.appendChild(li);
+    state[t.id].el = li;
+  }
+}
+
+/** Restart the detent animation on a row. */
+function punch(li) {
+  li.classList.remove('snap');
+  void li.offsetWidth;
+  li.classList.add('snap');
+}
+
+function render() {
+  const th = thresholds();
+
+  for (const t of TESTS) {
     const m = state[t.id];
+    const li = m.el;
+    const passed = testPassed(t, th);
+    li.classList.toggle('done', passed);
+    const [start, end] = fillBand(t);
+    li.style.setProperty('--fill-start', start);
+    li.style.setProperty('--fill-end', end);
+
+    if (t.type === 'cc' && m.current !== null) {
+      const centered = t.center && isCentered(m);
+      li.classList.add('has-cursor');
+      li.classList.toggle('in-zone', centered);
+      li.style.setProperty('--cursor', m.current / CC_MAX);
+      // Punch once when the cursor first enters the center window.
+      if (centered && !m.wasCentered) punch(li);
+      m.wasCentered = centered;
+    }
+
+    const detail = li.querySelector('.test-detail');
     if (t.type === 'firmware') {
       detail.textContent = m.version ?? '—';
     } else if (!m.seen) {
@@ -151,7 +180,5 @@ function render() {
       parts.push(`now ${m.current}${t.center ? (isCentered(m) ? ' ✓' : ' → center') : ''}`);
       detail.textContent = parts.join('   ·   ');
     }
-    li.appendChild(detail);
-    listEl.appendChild(li);
   }
 }
