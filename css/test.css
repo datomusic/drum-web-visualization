@@ -116,6 +116,11 @@
 .button.test-active { fill: var(--color-light-blue) !important; }
 .button.test-done   { fill: var(--color-green) !important; }
 
+/* Sample select arrows: up/down each turn green once a non-wrapping step was seen */
+.sample-select.test-idle   { fill: #c8c8c8 !important; }
+.sample-select.test-active { fill: var(--color-light-blue) !important; }
+.sample-select.test-done   { fill: var(--color-green) !important; }
+
 /* Knobs: the body disc (first path in the group); the pointer line stays white */
 .knob.test-idle   > path:first-child { fill: #c8c8c8 !important; }
 .knob.test-active > path:first-child { fill: var(--color-light-blue) !important; }
@@ -131,6 +136,6 @@
 #slider-swing.test-active > rect:first-child { fill: var(--color-light-blue) !important; }
 #slider-swing.test-done   > rect:first-child { fill: var(--color-green) !important; }
 
-.button, .knob > path:first-child, .knob-indicator, #slider-swing > rect:first-child {
+.button, .sample-select, .knob > path:first-child, .knob-indicator, #slider-swing > rect:first-child {
   transition: fill 0.15s;
 }

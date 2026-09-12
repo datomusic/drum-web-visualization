@@ -31,7 +31,9 @@ const REST_LOW = [0, 4];      // pads released
  *                with `rest: [lo, hi]` it must additionally be left within that window
  *   'notes'    — passes once every note of the given track (from NOTE_CONTROLS) has
  *                been received at least once; the bar fills per note in the note's color.
- *                With `rest: note` that note must additionally be the last one received
+ *                With `rest: note` that note must additionally be the last one received.
+ *                Also requires both sample-select buttons to have been seen working:
+ *                one step up (note+1) and one step down (note-1), wraparounds excluded
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -66,10 +68,13 @@ function faceplateEls(t) {
 const FACEPLATE_STATES = ['test-idle', 'test-active', 'test-done'];
 
 function setFaceplateState(t, cls) {
-  for (const el of faceplateEls(t)) {
-    el.classList.remove(...FACEPLATE_STATES);
-    el.classList.add(cls);
-  }
+  for (const el of faceplateEls(t)) setElState(el, cls);
+}
+
+function setElState(el, cls) {
+  if (!el) return;
+  el.classList.remove(...FACEPLATE_STATES);
+  el.classList.add(cls);
 }
 
 /** Notes belonging to a track, ordered by sample number. */
@@ -120,6 +125,12 @@ document.addEventListener('midi-note-on', e => {
     const m = state[t.id];
     if (!(note in m.heard)) continue;
     m.heard[note] = true;
+    // Sample select: a ±1 step from the previous note. Wraparound (first↔last of
+    // the track) is a jump of 7, so it never counts.
+    if (m.last !== null) {
+      if (note === m.last + 1) m.up = true;
+      if (note === m.last - 1) m.down = true;
+    }
     m.last = note;
     touched = true;
   }
@@ -137,7 +148,7 @@ function resetTests() {
       state[t.id] = { seen: false, min: Infinity, max: -Infinity, current: null, wasPassed: false };
     } else if (t.type === 'notes') {
       const notes = trackNotes(t.track);
-      state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), last: null, wasPassed: false };
+      state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), last: null, up: false, down: false, wasPassed: false };
     }
   }
   buildList();
@@ -161,7 +172,9 @@ function atRest(t, m) {
 function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
-  if (t.type === 'notes') return m.notes.every(n => m.heard[n.note]) && (!t.rest || m.last === t.rest);
+  if (t.type === 'notes') {
+    return m.notes.every(n => m.heard[n.note]) && m.up && m.down && (!t.rest || m.last === t.rest);
+  }
   return rangeCovered(m, th) && (!t.rest || atRest(t, m));
 }
 
@@ -221,6 +234,11 @@ function render() {
     if (t.type === 'cc') {
       setFaceplateState(t, passed ? 'test-done' : m.seen ? 'test-active' : 'test-idle');
     }
+    if (t.type === 'notes') {
+      const anyHeard = m.last !== null;
+      setElState(document.getElementById(`select-${t.track}-up`),   m.up   ? 'test-done' : anyHeard ? 'test-active' : 'test-idle');
+      setElState(document.getElementById(`select-${t.track}-down`), m.down ? 'test-done' : anyHeard ? 'test-active' : 'test-idle');
+    }
     const [start, end] = fillBand(t);
     li.style.setProperty('--fill-start', start);
     li.style.setProperty('--fill-end', end);
@@ -250,7 +268,7 @@ function render() {
       detail.textContent = m.version ?? '—';
     } else if (t.type === 'notes') {
       const heard = m.notes.filter(n => m.heard[n.note]).length;
-      const parts = [`${heard} / ${m.notes.length} notes`];
+      const parts = [`${heard} / ${m.notes.length} notes`, `↑${m.up ? '✓' : '·'} ↓${m.down ? '✓' : '·'}`];
       if (t.rest && m.last !== null) parts.push(m.last === t.rest ? `last ${m.last} ✓` : `last ${m.last} → ${t.rest}`);
       detail.textContent = parts.join('   ·   ');
     } else if (!m.seen) {
