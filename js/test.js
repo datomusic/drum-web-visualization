@@ -36,7 +36,7 @@ const SEQ_STEPS = 8;
  * (any rotation of the ring is accepted): kick on track 1, snare on track 3
  * opposite it, two hats on track 4 in between, track 2 empty.
  */
-const FINAL_PATTERN = { 1: [0], 2: [], 3: [4], 4: [2, 6] };
+const FINAL_PATTERN = { 1: [0], 2: [4], 3: [], 4: [2, 6] };
 
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
@@ -53,6 +53,8 @@ const FINAL_PATTERN = { 1: [0], 2: [], 3: [4], 4: [2, 6] };
  *                ≥ PAD_VELOCITY_MIN (i.e. struck on the drum pad, not the sequencer)
  *   'sequencer' — passes once every one of the 32 steps has been seen both on and off,
  *                and the sequencer is left in FINAL_PATTERN
+ *
+ * `half: true` renders the test at half width so two fit on one row.
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -60,21 +62,21 @@ const TESTS = [
   { id: 'slider-2',   label: 'Slider 2',     type: 'cc', cc: 22, rest: REST_CENTER },
   { id: 'slider-3',   label: 'Slider 3',     type: 'cc', cc: 23, rest: REST_CENTER },
   { id: 'slider-4',   label: 'Slider 4',     type: 'cc', cc: 24, rest: REST_CENTER },
-  { id: 'pot-volume', label: 'Volume pot',   type: 'cc', cc: 7,  rest: REST_CENTER },
-  { id: 'pot-tempo',  label: 'Tempo pot',    type: 'cc', cc: 15, rest: REST_CENTER },
-  { id: 'swing',      label: 'Swing switch', type: 'cc', cc: 9,  rest: REST_CENTER },
-  { id: 'pad-crush',  label: 'Crush pad',    type: 'cc', cc: 12, rest: REST_LOW },
-  { id: 'pad-random', label: 'Random pad',   type: 'cc', cc: 16, rest: REST_LOW },
-  { id: 'pad-repeat', label: 'Repeat pad',   type: 'cc', cc: 17, rest: REST_LOW },
-  { id: 'pad-filter', label: 'Filter pad',   type: 'cc', cc: 74, rest: REST_LOW },
+  { id: 'pot-volume', label: 'Volume',   type: 'cc', cc: 7,  rest: REST_CENTER },
+  { id: 'pot-tempo',  label: 'Tempo',    type: 'cc', cc: 15, rest: REST_CENTER },
+  { id: 'swing',      label: 'Swing',    type: 'cc', cc: 9,  rest: REST_CENTER },
+  { id: 'pad-crush',  label: 'Crush',    type: 'cc', cc: 12, rest: REST_LOW, half: true },
+  { id: 'pad-random', label: 'Random',   type: 'cc', cc: 16, rest: REST_LOW, half: true },
+  { id: 'pad-repeat', label: 'Repeat',   type: 'cc', cc: 17, rest: REST_LOW, half: true },
+  { id: 'pad-filter', label: 'Filter',   type: 'cc', cc: 74, rest: REST_LOW, half: true },
   { id: 'notes-1',    label: 'Track 1 notes', type: 'notes', track: 1, rest: 36 },
   { id: 'notes-2',    label: 'Track 2 notes', type: 'notes', track: 2, rest: 38 },
   { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3, rest: 46 },
   { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4, rest: 54 },
-  { id: 'pad-1',      label: 'Track 1 pad',   type: 'pad', track: 1 },
-  { id: 'pad-2',      label: 'Track 2 pad',   type: 'pad', track: 2 },
-  { id: 'pad-3',      label: 'Track 3 pad',   type: 'pad', track: 3 },
-  { id: 'pad-4',      label: 'Track 4 pad',   type: 'pad', track: 4 },
+  { id: 'pad-1',      label: 'Pad 1',   type: 'pad', track: 1, half: true },
+  { id: 'pad-2',      label: 'Pad 2',   type: 'pad', track: 2, half: true },
+  { id: 'pad-3',      label: 'Pad 3',   type: 'pad', track: 3, half: true },
+  { id: 'pad-4',      label: 'Pad 4',   type: 'pad', track: 4, half: true },
   { id: 'sequencer',  label: 'Sequencer',     type: 'sequencer' },
 ];
 
@@ -267,6 +269,7 @@ function buildList() {
   for (const t of TESTS) {
     const li = document.createElement('li');
     li.className = 'test';
+    if (t.half) li.classList.add('half');
     if (t.type === 'cc' && t.rest) {
       li.classList.add('has-rest');
       li.style.setProperty('--zone-start', t.rest[0] / CC_MAX);
@@ -360,7 +363,7 @@ function render() {
       detail.textContent = `${Math.min(m.hits, PAD_HITS)} / ${PAD_HITS} hits`;
     } else if (t.type === 'sequencer') {
       if (!m.current) {
-        detail.textContent = 'not received';
+        detail.textContent = '—';
       } else {
         const n = m.seenOn.length;
         const on = m.seenOn.filter(Boolean).length;
@@ -373,10 +376,10 @@ function render() {
       if (t.rest && m.last !== null) parts.push(m.last === t.rest ? `last ${m.last} ✓` : `last ${m.last} → ${t.rest}`);
       detail.textContent = parts.join('   ·   ');
     } else if (!m.seen) {
-      detail.textContent = 'not received';
+      detail.textContent = '—';
     } else {
       const parts = [`range ${m.min} – ${m.max}${rangeCovered(m, th) ? ' ✓' : ''}`];
-      parts.push(`now ${m.current}${t.rest ? (atRest(t, m) ? ' ✓' : ` → ${t.rest[0]}–${t.rest[1]}`) : ''}`);
+      parts.push(`${m.current}${t.rest ? (atRest(t, m) ? ' ✓' : ` → ${t.rest[0]}–${t.rest[1]}`) : ''}`);
       detail.textContent = parts.join('   ·   ');
     }
   }

@@ -26,16 +26,19 @@
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--space-m);
 }
 
 .test {
+  /* Full row by default; .half puts two on one row */
+  flex: 1 1 100%;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-m);
-  padding: var(--space-s) var(--space-l);
+  padding: var(--space-s) var(--space-m);
   border-radius: 12px;
   position: relative;
   overflow: hidden;
@@ -47,6 +50,16 @@
     var(--color-light-blue) calc(var(--fill-start) * 100%),
     var(--color-light-blue) calc(var(--fill-end) * 100%),
     var(--color-gray) calc(var(--fill-end) * 100%));
+}
+
+.test.half {
+  flex-basis: calc(50% - var(--space-m) / 2);
+}
+.test.half .test-title { white-space: nowrap; }
+.test.half .test-detail {
+  font-size: var(--text-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .test.done { background: var(--color-green); color: #fff; }
