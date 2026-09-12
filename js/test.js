@@ -16,6 +16,9 @@ import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP } from './cont
 const CC_MIN = 0;
 const CC_MAX = 127;
 
+// Minimum firmware version required to pass the firmware test.
+const FIRMWARE_MIN_VERSION = '1.0.0';
+
 // Percentage of the 0–127 range a control must sweep to pass (centered on the range).
 const COVERAGE_PCT = 90;
 
@@ -41,7 +44,7 @@ const FINAL_PATTERN = { 1: [0], 2: [4], 3: [], 4: [2, 6] };
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
  * type:
- *   'firmware' — passes when a firmware version response is received
+ *   'firmware' — passes when a firmware version ≥ FIRMWARE_MIN_VERSION is received
  *   'cc'       — passes when the CC has been received across the required range;
  *                with `rest: [lo, hi]` it must additionally be left within that window
  *   'notes'    — passes once every note of the given track (from NOTE_CONTROLS) has
@@ -242,9 +245,26 @@ function atRest(t, m) {
   return m.current !== null && m.current >= t.rest[0] && m.current <= t.rest[1];
 }
 
+/** Parse "v1.2.3" / "1.2.3" into [1, 2, 3]; null if unparseable. */
+function parseVersion(v) {
+  const match = /(\d+)\.(\d+)\.(\d+)/.exec(v ?? '');
+  return match ? match.slice(1, 4).map(Number) : null;
+}
+
+/** Is firmware version string `v` at least FIRMWARE_MIN_VERSION? */
+function firmwareOk(v) {
+  const got = parseVersion(v);
+  if (!got) return false;
+  const min = parseVersion(FIRMWARE_MIN_VERSION);
+  for (let i = 0; i < 3; i++) {
+    if (got[i] !== min[i]) return got[i] > min[i];
+  }
+  return true;
+}
+
 function testPassed(t, th) {
   const m = state[t.id];
-  if (t.type === 'firmware') return m.version !== null;
+  if (t.type === 'firmware') return firmwareOk(m.version);
   if (t.type === 'pad') return m.hits >= PAD_HITS;
   if (t.type === 'sequencer') {
     return m.seenOn.every(Boolean) && m.seenOff.every(Boolean) && finalPatternMatch(m.current);
@@ -258,7 +278,7 @@ function testPassed(t, th) {
 /** Fill band [start, end] as fractions (0–1) of 0–127: the visited min..max range. */
 function fillBand(t) {
   const m = state[t.id];
-  if (t.type === 'firmware') return m.version !== null ? [0, 1] : [0, 0];
+  if (t.type === 'firmware') return firmwareOk(m.version) ? [0, 1] : [0, 0];
   if (t.type === 'pad') return [0, Math.min(m.hits, PAD_HITS) / PAD_HITS];
   if (t.type === 'sequencer') {
     const both = m.seenOn.filter((v, i) => v && m.seenOff[i]).length;
@@ -362,7 +382,8 @@ function render() {
 
     const detail = li.querySelector('.test-detail');
     if (t.type === 'firmware') {
-      detail.textContent = m.version ?? '—';
+      detail.textContent = m.version === null ? '—'
+        : firmwareOk(m.version) ? `${m.version} ✓` : `${m.version} → ≥ ${FIRMWARE_MIN_VERSION}`;
     } else if (t.type === 'pad') {
       detail.textContent = `${Math.min(m.hits, PAD_HITS)} / ${PAD_HITS} hits`;
     } else if (t.type === 'sequencer') {
