@@ -85,7 +85,11 @@ function faceplateEls(t) {
   if (t.type !== 'cc') return [];
   const ctrl = CC_CONTROLS[t.cc];
   if (!ctrl) return [];
-  return [ctrl.id, ctrl.indicatorId]
+  // Sliders also color their track so the whole control reads as one bar
+  const trackId = ctrl.id === 'slider-swing'
+    ? 'slider-swing-track'
+    : ctrl.indicatorId?.replace('pitch-indicator-', 'pitch-slider-track-');
+  return [ctrl.id, ctrl.indicatorId, trackId]
     .filter(Boolean)
     .map(id => document.getElementById(id))
     .filter(Boolean);

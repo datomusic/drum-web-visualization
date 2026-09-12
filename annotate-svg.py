@@ -21,6 +21,10 @@ ET.register_namespace('xlink', XLINK_NS)
 # Helpers
 # ---------------------------------------------------------------------------
 
+# Pitch slider track: a 169.705-unit diagonal line segment with rounded caps
+TRACK_D_RE = re.compile(r'^M[^l]*l-?169\.70[56],-?169\.70[56]c')
+
+
 def get_fill(elem):
     style = elem.get('style', '')
     m = re.search(r'fill:([^;]+)', style)
@@ -134,6 +138,11 @@ def annotate(input_path, output_path):
             if existing_id == 'step' or re.match(r'^step\d+$', existing_id):
                 ddd_paths.append(('led', elem, dist, angle))
 
+            elif TRACK_D_RE.search(elem.get('d', '')):
+                # Four pitch slider tracks: 240-unit rounded bars on the diagonals,
+                # unfilled (black) and either anonymous or named pitch-slider-track*
+                ddd_paths.append(('pitch_track', elem, dist, angle))
+
             elif fill == '#414141':
                 # Four knob-indicator tick-marks, one per diagonal quadrant
                 ddd_paths.append(('indicator', elem, dist, angle))
@@ -163,6 +172,12 @@ def annotate(input_path, output_path):
     for e, d, a in pitch_knobs:
         t = track_from_angle(a)
         set_attr(e, f'pitch-slider-{t}', 'control slider pitch-slider')
+
+    # ---- Pitch slider tracks: same quadrant mapping ----
+    pitch_tracks = [(e, d, a) for kind, e, d, a in ddd_paths if kind == 'pitch_track']
+    for e, d, a in pitch_tracks:
+        t = track_from_angle(a)
+        set_attr(e, f'pitch-slider-track-{t}', 'pitch-slider-track')
 
     # ---- Drum pads: id="drumpad-{1-4}" already set in source SVG — just add classes ----
     for e, t in pad_groups:
@@ -205,6 +220,7 @@ def annotate(input_path, output_path):
     print(f"  Play button circles: {len(circles)}")
     print(f"  Pitch indicators:    {len(indicators)}")
     print(f"  Pitch sliders:       {len(pitch_knobs)}")
+    print(f"  Pitch slider tracks: {len(pitch_tracks)}")
     print(f"  Drum pads:           {len(pad_groups)}/4")
     print(f"  Step LEDs:           {len(leds)}/32 [{step_status}] → step-00..step-{len(leds)-1:02d}")
     status = "OK" if len(sample_selects) == 8 and not missing_selects else "INCOMPLETE"
