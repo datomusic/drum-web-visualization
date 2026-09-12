@@ -11,7 +11,7 @@
 
 import { initMIDI } from './midi.js';
 import { initVisualizer } from './visualizer.js';
-import { CC_CONTROLS, NOTE_CONTROLS } from './controls.js';
+import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP } from './controls.js';
 
 const CC_MIN = 0;
 const CC_MAX = 127;
@@ -28,6 +28,16 @@ const REST_LOW = [0, 4];      // pads released
 const PAD_VELOCITY_MIN = 101;
 const PAD_HITS = 3;
 
+// Sequencer: 4 tracks × 8 steps, read from the periodic sequencer-state poll.
+const SEQ_TRACKS = 4;
+const SEQ_STEPS = 8;
+/**
+ * Final pattern the device must be left in, as step offsets relative to the kick
+ * (any rotation of the ring is accepted): kick on track 1, snare on track 3
+ * opposite it, two hats on track 4 in between, track 2 empty.
+ */
+const FINAL_PATTERN = { 1: [0], 2: [], 3: [4], 4: [2, 6] };
+
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
  * type:
@@ -41,6 +51,8 @@ const PAD_HITS = 3;
  *                one step up (note+1) and one step down (note-1), wraparounds excluded
  *   'pad'      — passes once PAD_HITS notes of the track were received with velocity
  *                ≥ PAD_VELOCITY_MIN (i.e. struck on the drum pad, not the sequencer)
+ *   'sequencer' — passes once every one of the 32 steps has been seen both on and off,
+ *                and the sequencer is left in FINAL_PATTERN
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -63,6 +75,7 @@ const TESTS = [
   { id: 'pad-2',      label: 'Track 2 pad',   type: 'pad', track: 2 },
   { id: 'pad-3',      label: 'Track 3 pad',   type: 'pad', track: 3 },
   { id: 'pad-4',      label: 'Track 4 pad',   type: 'pad', track: 4 },
+  { id: 'sequencer',  label: 'Sequencer',     type: 'sequencer' },
 ];
 
 /** SVG elements on the faceplate that show a CC test's state (idle / active / done). */
@@ -154,6 +167,38 @@ document.addEventListener('midi-note-on', e => {
   if (touched) render();
 });
 
+document.addEventListener('midi-sequencer-state', e => {
+  const on = e.detail.stepVelocities.slice(0, SEQ_TRACKS * SEQ_STEPS).map(v => v > 0);
+  for (const t of TESTS) {
+    if (t.type !== 'sequencer') continue;
+    const m = state[t.id];
+    m.current = on;
+    on.forEach((lit, i) => { if (lit) m.seenOn[i] = true; else m.seenOff[i] = true; });
+  }
+  render();
+});
+
+/** Index into the 32-step array for a 1-based track and 0-based step. */
+function seqIndex(track, step) {
+  return (track - 1) * SEQ_STEPS + step;
+}
+
+/** Does the current sequencer state equal FINAL_PATTERN at some rotation? */
+function finalPatternMatch(current) {
+  if (!current) return false;
+  for (let rot = 0; rot < SEQ_STEPS; rot++) {
+    let ok = true;
+    for (let track = 1; track <= SEQ_TRACKS && ok; track++) {
+      const want = new Set(FINAL_PATTERN[track].map(o => (o + rot) % SEQ_STEPS));
+      for (let step = 0; step < SEQ_STEPS; step++) {
+        if (current[seqIndex(track, step)] !== want.has(step)) { ok = false; break; }
+      }
+    }
+    if (ok) return true;
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 
 function resetTests() {
@@ -168,6 +213,9 @@ function resetTests() {
       state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), last: null, up: false, down: false, wasPassed: false };
     } else if (t.type === 'pad') {
       state[t.id] = { hits: 0, wasPassed: false };
+    } else if (t.type === 'sequencer') {
+      const n = SEQ_TRACKS * SEQ_STEPS;
+      state[t.id] = { seenOn: Array(n).fill(false), seenOff: Array(n).fill(false), current: null, wasPassed: false };
     }
   }
   buildList();
@@ -192,6 +240,9 @@ function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
   if (t.type === 'pad') return m.hits >= PAD_HITS;
+  if (t.type === 'sequencer') {
+    return m.seenOn.every(Boolean) && m.seenOff.every(Boolean) && finalPatternMatch(m.current);
+  }
   if (t.type === 'notes') {
     return m.notes.every(n => m.heard[n.note]) && m.up && m.down && (!t.rest || m.last === t.rest);
   }
@@ -203,6 +254,10 @@ function fillBand(t) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null ? [0, 1] : [0, 0];
   if (t.type === 'pad') return [0, Math.min(m.hits, PAD_HITS) / PAD_HITS];
+  if (t.type === 'sequencer') {
+    const both = m.seenOn.filter((v, i) => v && m.seenOff[i]).length;
+    return [0, both / m.seenOn.length];
+  }
   return m.seen ? [m.min / CC_MAX, m.max / CC_MAX] : [0, 0];
 }
 
@@ -258,6 +313,17 @@ function render() {
     if (t.type === 'pad') {
       setElState(document.getElementById(`drumpad-${t.track}`), passed ? 'test-done' : m.hits > 0 ? 'test-active' : 'test-idle');
     }
+    if (t.type === 'sequencer') {
+      // Per step LED: green once seen both on and off, light blue once seen at all.
+      for (let track = 1; track <= SEQ_TRACKS; track++) {
+        for (let step = 0; step < SEQ_STEPS; step++) {
+          const i = seqIndex(track, step);
+          const el = document.getElementById(STEP_LED_IDS[TRACK_STEP_MAP[track][0] + step]);
+          const both = m.seenOn[i] && m.seenOff[i];
+          setElState(el, both ? 'test-done' : m.current ? 'test-active' : 'test-idle');
+        }
+      }
+    }
     if (t.type === 'notes') {
       const anyHeard = m.last !== null;
       setElState(document.getElementById(`select-${t.track}-up`),   m.up   ? 'test-done' : anyHeard ? 'test-active' : 'test-idle');
@@ -292,6 +358,15 @@ function render() {
       detail.textContent = m.version ?? '—';
     } else if (t.type === 'pad') {
       detail.textContent = `${Math.min(m.hits, PAD_HITS)} / ${PAD_HITS} hits`;
+    } else if (t.type === 'sequencer') {
+      if (!m.current) {
+        detail.textContent = 'not received';
+      } else {
+        const n = m.seenOn.length;
+        const on = m.seenOn.filter(Boolean).length;
+        const off = m.seenOff.filter(Boolean).length;
+        detail.textContent = [`${on} / ${n} on`, `${off} / ${n} off`, `pattern ${finalPatternMatch(m.current) ? '✓' : '·'}`].join('   ·   ');
+      }
     } else if (t.type === 'notes') {
       const heard = m.notes.filter(n => m.heard[n.note]).length;
       const parts = [`${heard} / ${m.notes.length} notes`, `↑${m.up ? '✓' : '·'} ↓${m.down ? '✓' : '·'}`];

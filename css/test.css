@@ -127,6 +127,16 @@
 .pad.test-active > path:first-child { fill: var(--color-light-blue) !important; }
 .pad.test-done   > path:first-child { fill: var(--color-green) !important; }
 
+/* Step LEDs: state color for the LED, with the live on/off state shown through
+   opacity (dim = off, solid = on) so the operator can still dial in the final
+   pattern. The playhead (.active) keeps its teal from styles.css. */
+.step-led.test-idle   { fill: #c8c8c8 !important; }
+.step-led.test-active { fill: var(--color-light-blue) !important; }
+.step-led.test-done   { fill: var(--color-green) !important; }
+.step-led.test-idle, .step-led.test-active, .step-led.test-done { fill-opacity: 0.35; }
+.step-led.test-idle.lit, .step-led.test-active.lit, .step-led.test-done.lit { fill-opacity: 1; }
+.step-led.active { fill: #00d9b5 !important; fill-opacity: 1; }
+
 /* Knobs: the body disc (first path in the group); the pointer line stays white */
 .knob.test-idle   > path:first-child { fill: #c8c8c8 !important; }
 .knob.test-active > path:first-child { fill: var(--color-light-blue) !important; }
