@@ -121,6 +121,12 @@
 .sample-select.test-active { fill: var(--color-light-blue) !important; }
 .sample-select.test-done   { fill: var(--color-green) !important; }
 
+/* Drum pads: the pad face (first path in the group). Overrides the note color the
+   visualizer paints on hit; the .hit flash still shows through fill-opacity. */
+.pad.test-idle   > path:first-child { fill: #c8c8c8 !important; }
+.pad.test-active > path:first-child { fill: var(--color-light-blue) !important; }
+.pad.test-done   > path:first-child { fill: var(--color-green) !important; }
+
 /* Knobs: the body disc (first path in the group); the pointer line stays white */
 .knob.test-idle   > path:first-child { fill: #c8c8c8 !important; }
 .knob.test-active > path:first-child { fill: var(--color-light-blue) !important; }
@@ -136,6 +142,6 @@
 #slider-swing.test-active > rect:first-child { fill: var(--color-light-blue) !important; }
 #slider-swing.test-done   > rect:first-child { fill: var(--color-green) !important; }
 
-.button, .sample-select, .knob > path:first-child, .knob-indicator, #slider-swing > rect:first-child {
+.button, .sample-select, .pad > path:first-child, .knob > path:first-child, .knob-indicator, #slider-swing > rect:first-child {
   transition: fill 0.15s;
 }

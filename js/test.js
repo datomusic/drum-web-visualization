@@ -23,6 +23,11 @@ const COVERAGE_PCT = 90;
 const REST_CENTER = [60, 66]; // sliders / pots returned to the middle
 const REST_LOW = [0, 4];      // pads released
 
+// Drum pads: the sequencer and sample select buttons emit velocity 100, so anything
+// above that must be a physical pad hit. A pad passes after PAD_HITS such notes.
+const PAD_VELOCITY_MIN = 101;
+const PAD_HITS = 3;
+
 /**
  * Ordered list of tests — one list item per element. Extend this array to add tests.
  * type:
@@ -34,6 +39,8 @@ const REST_LOW = [0, 4];      // pads released
  *                With `rest: note` that note must additionally be the last one received.
  *                Also requires both sample-select buttons to have been seen working:
  *                one step up (note+1) and one step down (note-1), wraparounds excluded
+ *   'pad'      — passes once PAD_HITS notes of the track were received with velocity
+ *                ≥ PAD_VELOCITY_MIN (i.e. struck on the drum pad, not the sequencer)
  */
 const TESTS = [
   { id: 'firmware',  label: 'Firmware version', type: 'firmware' },
@@ -52,6 +59,10 @@ const TESTS = [
   { id: 'notes-2',    label: 'Track 2 notes', type: 'notes', track: 2, rest: 38 },
   { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3, rest: 46 },
   { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4, rest: 54 },
+  { id: 'pad-1',      label: 'Track 1 pad',   type: 'pad', track: 1 },
+  { id: 'pad-2',      label: 'Track 2 pad',   type: 'pad', track: 2 },
+  { id: 'pad-3',      label: 'Track 3 pad',   type: 'pad', track: 3 },
+  { id: 'pad-4',      label: 'Track 4 pad',   type: 'pad', track: 4 },
 ];
 
 /** SVG elements on the faceplate that show a CC test's state (idle / active / done). */
@@ -118,9 +129,15 @@ document.addEventListener('midi-cc', e => {
   if (touched) render();
 });
 document.addEventListener('midi-note-on', e => {
-  const { note } = e.detail;
+  const { note, velocity } = e.detail;
   let touched = false;
   for (const t of TESTS) {
+    if (t.type === 'pad') {
+      if (velocity < PAD_VELOCITY_MIN || NOTE_CONTROLS[note]?.track !== t.track) continue;
+      state[t.id].hits++;
+      touched = true;
+      continue;
+    }
     if (t.type !== 'notes') continue;
     const m = state[t.id];
     if (!(note in m.heard)) continue;
@@ -149,6 +166,8 @@ function resetTests() {
     } else if (t.type === 'notes') {
       const notes = trackNotes(t.track);
       state[t.id] = { notes, heard: Object.fromEntries(notes.map(n => [n.note, false])), last: null, up: false, down: false, wasPassed: false };
+    } else if (t.type === 'pad') {
+      state[t.id] = { hits: 0, wasPassed: false };
     }
   }
   buildList();
@@ -172,6 +191,7 @@ function atRest(t, m) {
 function testPassed(t, th) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null;
+  if (t.type === 'pad') return m.hits >= PAD_HITS;
   if (t.type === 'notes') {
     return m.notes.every(n => m.heard[n.note]) && m.up && m.down && (!t.rest || m.last === t.rest);
   }
@@ -182,6 +202,7 @@ function testPassed(t, th) {
 function fillBand(t) {
   const m = state[t.id];
   if (t.type === 'firmware') return m.version !== null ? [0, 1] : [0, 0];
+  if (t.type === 'pad') return [0, Math.min(m.hits, PAD_HITS) / PAD_HITS];
   return m.seen ? [m.min / CC_MAX, m.max / CC_MAX] : [0, 0];
 }
 
@@ -234,6 +255,9 @@ function render() {
     if (t.type === 'cc') {
       setFaceplateState(t, passed ? 'test-done' : m.seen ? 'test-active' : 'test-idle');
     }
+    if (t.type === 'pad') {
+      setElState(document.getElementById(`drumpad-${t.track}`), passed ? 'test-done' : m.hits > 0 ? 'test-active' : 'test-idle');
+    }
     if (t.type === 'notes') {
       const anyHeard = m.last !== null;
       setElState(document.getElementById(`select-${t.track}-up`),   m.up   ? 'test-done' : anyHeard ? 'test-active' : 'test-idle');
@@ -266,6 +290,8 @@ function render() {
     const detail = li.querySelector('.test-detail');
     if (t.type === 'firmware') {
       detail.textContent = m.version ?? '—';
+    } else if (t.type === 'pad') {
+      detail.textContent = `${Math.min(m.hits, PAD_HITS)} / ${PAD_HITS} hits`;
     } else if (t.type === 'notes') {
       const heard = m.notes.filter(n => m.heard[n.note]).length;
       const parts = [`${heard} / ${m.notes.length} notes`, `↑${m.up ? '✓' : '·'} ↓${m.down ? '✓' : '·'}`];
