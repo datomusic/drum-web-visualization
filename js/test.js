@@ -11,7 +11,7 @@
 
 import { initMIDI } from './midi.js';
 import { initVisualizer } from './visualizer.js';
-import { NOTE_CONTROLS } from './controls.js';
+import { CC_CONTROLS, NOTE_CONTROLS } from './controls.js';
 
 const CC_MIN = 0;
 const CC_MAX = 127;
@@ -51,6 +51,26 @@ const TESTS = [
   { id: 'notes-3',    label: 'Track 3 notes', type: 'notes', track: 3, rest: 46 },
   { id: 'notes-4',    label: 'Track 4 notes', type: 'notes', track: 4, rest: 54 },
 ];
+
+/** SVG elements on the faceplate that show a CC test's state (idle / active / done). */
+function faceplateEls(t) {
+  if (t.type !== 'cc') return [];
+  const ctrl = CC_CONTROLS[t.cc];
+  if (!ctrl) return [];
+  return [ctrl.id, ctrl.indicatorId]
+    .filter(Boolean)
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+}
+
+const FACEPLATE_STATES = ['test-idle', 'test-active', 'test-done'];
+
+function setFaceplateState(t, cls) {
+  for (const el of faceplateEls(t)) {
+    el.classList.remove(...FACEPLATE_STATES);
+    el.classList.add(cls);
+  }
+}
 
 /** Notes belonging to a track, ordered by sample number. */
 function trackNotes(track) {
@@ -198,6 +218,9 @@ function render() {
     // Punch once when the item turns green.
     if (passed && !m.wasPassed) punch(li);
     m.wasPassed = passed;
+    if (t.type === 'cc') {
+      setFaceplateState(t, passed ? 'test-done' : m.seen ? 'test-active' : 'test-idle');
+    }
     const [start, end] = fillBand(t);
     li.style.setProperty('--fill-start', start);
     li.style.setProperty('--fill-end', end);

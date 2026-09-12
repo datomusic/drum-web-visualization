@@ -105,3 +105,32 @@
 .test-detail {
   white-space: pre;
 }
+
+/* ---- Faceplate state colors ----
+   test.js puts .test-idle / .test-active / .test-done on the SVG element(s)
+   behind each CC test. Inline style="fill:…" on the source paths wins over
+   plain class rules, hence !important. */
+
+/* Buttons (effect pads): the path itself */
+.button.test-idle   { fill: #c8c8c8 !important; }
+.button.test-active { fill: var(--color-light-blue) !important; }
+.button.test-done   { fill: var(--color-green) !important; }
+
+/* Knobs: the body disc (first path in the group); the pointer line stays white */
+.knob.test-idle   > path:first-child { fill: #c8c8c8 !important; }
+.knob.test-active > path:first-child { fill: var(--color-light-blue) !important; }
+.knob.test-done   > path:first-child { fill: var(--color-green) !important; }
+
+/* Pitch sliders: the track (indicator) is colored, the handle stays white */
+.knob-indicator.test-idle   { fill: #c8c8c8 !important; }
+.knob-indicator.test-active { fill: var(--color-light-blue) !important; }
+.knob-indicator.test-done   { fill: var(--color-green) !important; }
+
+/* Swing switch: the body rect (first in the group); the three tick marks stay */
+#slider-swing.test-idle   > rect:first-child { fill: #c8c8c8 !important; }
+#slider-swing.test-active > rect:first-child { fill: var(--color-light-blue) !important; }
+#slider-swing.test-done   > rect:first-child { fill: var(--color-green) !important; }
+
+.button, .knob > path:first-child, .knob-indicator, #slider-swing > rect:first-child {
+  transition: fill 0.15s;
+}
