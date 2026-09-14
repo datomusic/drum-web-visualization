@@ -175,3 +175,12 @@
 #slider-swing.test-active > rect:first-child { fill: var(--color-light-blue) !important; }
 #slider-swing.test-done   > rect,
 #slider-swing-track.test-done { fill: var(--color-faceplate-done) !important; }
+
+/* ---- Performance ----
+   The test runs on slow machines. SVG filters are CPU-rasterized and re-run on
+   every fill/class change, and fill/transform transitions keep the faceplate
+   repainting for several frames per MIDI event. Neither is needed here: snap. */
+svg, svg * {
+  filter: none !important;
+  transition: none !important;
+}
