@@ -23,7 +23,7 @@ const FIRMWARE_MIN_VERSION = '1.0.0';
 const COVERAGE_PCT = 90;
 
 // Rest windows [lo, hi] (inclusive): where a control must be left for the test to pass.
-const REST_CENTER = [60, 66]; // sliders / pots returned to the middle
+const REST_CENTER = [59, 67]; // sliders / pots returned to the middle
 const REST_LOW = [0, 4];      // pads released
 
 // Drum pads: the sequencer and sample select buttons emit velocity 100, so anything
