@@ -47,10 +47,6 @@
   /* Full row by default; .half puts two on one row */
   flex: 1 1 100%;
   min-width: 0;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-m);
   padding: var(--space-s) var(--space-m);
   border-radius: 12px;
   position: relative;
@@ -64,6 +60,23 @@
     var(--color-light-blue) calc(var(--fill-end) * 100%),
     var(--color-gray) calc(var(--fill-end) * 100%));
 }
+
+.test-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-m);
+}
+
+/* Nested in the firmware row (see buildList() in test.js) instead of its own
+   separate line below the list — the row's own detail already shows the
+   version, so this only needs to carry the connection state. */
+#midi-status {
+  margin-top: var(--space-s);
+  font-size: var(--text-s);
+  color: var(--color-teal);
+}
+.test.done #midi-status { color: #fff; }
 
 .test.half {
   flex-basis: calc(50% - var(--space-m) / 2);

@@ -305,12 +305,18 @@ function buildList() {
       li.style.setProperty('--zone-start', i / notes.length);
       li.style.setProperty('--zone-end', (i + 1) / notes.length);
     }
+    const row = document.createElement('div');
+    row.className = 'test-row';
     const title = document.createElement('div');
     title.className = 'test-title';
     title.textContent = t.label;
     const detail = document.createElement('div');
     detail.className = 'test-detail';
-    li.append(title, detail);
+    row.append(title, detail);
+    li.append(row);
+    // The MIDI connection status ("Connected: DRUM (v1.0.0)") is redundant with
+    // this row's own version detail — fold it in here instead of a separate line.
+    if (t.type === 'firmware') li.append(statusEl);
     listEl.appendChild(li);
     state[t.id].el = li;
   }
