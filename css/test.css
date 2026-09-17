@@ -14,11 +14,24 @@
   overflow-y: auto;
 }
 
-#test-panel h1 {
-  margin: 0 0 var(--space-m);
+/* Header now lives in the left pane, above the faceplate, instead of
+   inside #test-panel. That pane has a dark background, so this needs its
+   own (light) color rather than #test-panel's --color-text. */
+#test-title {
+  margin: 0 0 var(--space-s);
   font-size: var(--text-l);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
+  color: #fff;
+  font-family: var(--font-base);
+}
+
+/* The faceplate artwork has ~57px of empty space baked into its viewBox
+   above the visible ring (room for the corner triangles/shadow). Pull the
+   SVG up to close most of that gap so the header sits close to the ring. */
+#visualization svg {
+  margin-top: -45px;
 }
 
 #test-list {
