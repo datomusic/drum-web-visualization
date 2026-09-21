@@ -312,11 +312,12 @@ function buildList() {
     title.textContent = t.label;
     const detail = document.createElement('div');
     detail.className = 'test-detail';
-    row.append(title, detail);
+    // The MIDI connection status lives in this row's value column (kept on
+    // one line so the list fits a laptop screen). It is hidden once a version
+    // arrives, since "1.0.0 ✓" already implies a connection — see render().
+    if (t.type === 'firmware') row.append(title, statusEl, detail);
+    else row.append(title, detail);
     li.append(row);
-    // The MIDI connection status ("Connected: DRUM (v1.0.0)") is redundant with
-    // this row's own version detail — fold it in here instead of a separate line.
-    if (t.type === 'firmware') li.append(statusEl);
     listEl.appendChild(li);
     state[t.id].el = li;
   }
@@ -388,7 +389,8 @@ function render() {
 
     const detail = li.querySelector('.test-detail');
     if (t.type === 'firmware') {
-      detail.textContent = m.version === null ? '—'
+      statusEl.hidden = m.version !== null;
+      detail.textContent = m.version === null ? ''
         : firmwareOk(m.version) ? `${m.version} ✓` : `${m.version} → ≥ ${FIRMWARE_MIN_VERSION}`;
     } else if (t.type === 'pad') {
       detail.textContent = `${Math.min(m.hits, PAD_HITS)} / ${PAD_HITS} hits`;

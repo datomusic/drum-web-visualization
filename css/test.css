@@ -68,14 +68,15 @@
   gap: var(--space-m);
 }
 
-/* Nested in the firmware row (see buildList() in test.js) instead of its own
-   separate line below the list — the row's own detail already shows the
-   version, so this only needs to carry the connection state. */
+/* Sits in the firmware row's value column (see buildList() in test.js) so it
+   doesn't add a line to the list; hidden once the version detail takes over. */
 #midi-status {
-  margin-top: var(--space-s);
+  margin-left: auto;
   font-size: var(--text-s);
   color: var(--color-teal);
+  white-space: nowrap;
 }
+#midi-status[hidden] { display: none; }
 .test.done #midi-status { color: #fff; }
 
 .test.half {
