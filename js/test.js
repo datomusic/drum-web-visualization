@@ -11,6 +11,7 @@
 
 import { initMIDI } from './midi.js';
 import { initVisualizer } from './visualizer.js';
+import { initTone, setToneCC, muteTone } from './tone.js';
 import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP } from './controls.js';
 
 const CC_MIN = 0;
@@ -18,6 +19,9 @@ const CC_MAX = 127;
 
 // Minimum firmware version required to pass the firmware test.
 const FIRMWARE_MIN_VERSION = '1.0.0';
+
+// The sine wave for the line-in test follows this CC (PITCH1 slider).
+const TONE_PITCH_CC = 21;
 
 // Percentage of the 0–127 range a control must sweep to pass (centered on the range).
 const COVERAGE_PCT = 90;
@@ -125,6 +129,7 @@ const statusEl = document.getElementById('midi-status');
 let state = {};
 
 initVisualizer();
+initTone(document.getElementById('tone-toggle'));
 initMIDI(statusEl);
 resetTests();
 
@@ -138,6 +143,7 @@ document.addEventListener('midi-firmware-version', e => {
 });
 document.addEventListener('midi-cc', e => {
   const { cc, value } = e.detail;
+  if (cc === TONE_PITCH_CC) setToneCC(value);
   let touched = false;
   for (const t of TESTS) {
     if (t.type !== 'cc' || t.cc !== cc) continue;
@@ -211,6 +217,7 @@ function finalPatternMatch(current) {
 // ---------------------------------------------------------------------------
 
 function resetTests() {
+  muteTone();
   state = {};
   for (const t of TESTS) {
     if (t.type === 'firmware') {

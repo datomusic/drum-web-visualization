@@ -30,9 +30,36 @@
 /* The faceplate artwork has ~57px of empty space baked into its viewBox
    above the visible ring (room for the corner triangles/shadow). Pull the
    SVG up to close most of that gap so the header sits close to the ring. */
-#visualization svg {
+#visualization {
+  position: relative;
+}
+#visualization > svg {
   margin-top: -45px;
 }
+
+/* Sine wave toggle, bottom right of the faceplate pane (see js/tone.js).
+   Muted shows a slash through the speaker; playing shows the sound waves. */
+#tone-toggle {
+  position: absolute;
+  right: 48px;
+  bottom: 32px;
+  padding: var(--space-s);
+  background: none;
+  border: none;
+  color: var(--color-teal);
+  cursor: pointer;
+  line-height: 0;
+}
+/* styles.css rotates every svg under #visualization for the faceplate */
+#tone-toggle svg {
+  width: 32px;
+  height: 32px;
+  transform: none;
+}
+#tone-toggle.muted { color: #888; }
+#tone-toggle .tone-slash { display: none; }
+#tone-toggle.muted .tone-slash { display: block; }
+#tone-toggle.muted .tone-wave { display: none; }
 
 #test-list {
   list-style: none;
