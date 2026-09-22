@@ -49,4 +49,4 @@ The source SVGs have no semantic IDs (and are gitignored — `*.svg`).
 ## Known gaps
 
 - **DRUM step LED track mapping** (`TRACK_STEP_MAP` in `drum/js/controls.js`) is a best guess — verify with the device using `?debug=1`.
-- **DUO slider direction** (`dir` in `duo/js/controls.js`) and **step button order** (`step-1…8` in `duo/annotate-svg.py`) are unverified against hardware.
+- **DUO step button order** (`step-1…8` in `duo/annotate-svg.py`) and left arrow = transpose down are unverified against hardware.

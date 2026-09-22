@@ -46,7 +46,6 @@ let the test cover them with the existing `cc` test type and `REST_LOW`.
 
 ## Still to verify on hardware (current page)
 
-- Slider direction on screen (`dir` in `duo/js/controls.js`).
 - Left arrow = transpose down.
 - Step button order `step-1…8` in `duo/annotate-svg.py` (IDs only, not tested).
 - Length measurement with the sequencer running.
