@@ -1,10 +1,11 @@
 /**
  * visualizer.js
  * Maps MIDI events to SVG DOM updates (CSS classes + transforms).
- * Listens for CustomEvents dispatched by midi.js.
+ * Listens for CustomEvents dispatched by shared/js/midi.js and drum/js/device.js.
  */
 
-import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP, ccToRotation, ccToTranslation } from './controls.js';
+import { CC_CONTROLS, NOTE_CONTROLS, STEP_LED_IDS, TRACK_STEP_MAP } from './controls.js';
+import { applyCC } from '../../shared/js/faceplate.js';
 
 // Duration a pad stays "lit" after a hit (ms)
 const HIT_DURATION_MS = 120;
@@ -34,40 +35,7 @@ export function initVisualizer() {
 
 function handleCC({ cc, value }) {
   const ctrl = CC_CONTROLS[cc];
-  if (!ctrl) return;
-
-  const el = document.getElementById(ctrl.id);
-
-  if (ctrl.type === 'button') {
-    if (ctrl.pressure && el) {
-      el.style.setProperty('--cc-pressure', value / 127);
-    }
-    el?.classList.toggle('pressed', value > 0);
-
-  } else if (ctrl.type === 'knob') {
-    const deg = ccToRotation(value);
-    if (el) el.dataset.ccValue = value;
-    const rotTarget = ctrl.indicatorId
-      ? document.getElementById(ctrl.indicatorId)
-      : el;
-    if (rotTarget) {
-      const bbox = rotTarget.getBBox();
-      const cx = bbox.x + bbox.width / 2;
-      const cy = bbox.y + bbox.height / 2;
-      rotTarget.style.transformOrigin = `${cx}px ${cy}px`;
-      rotTarget.style.transform = `rotate(${deg}deg)`;
-    }
-
-  } else if (ctrl.type === 'slider') {
-    const offset = ccToTranslation(value, ctrl.travel);
-    const tx = offset * ctrl.dir[0];
-    const ty = offset * ctrl.dir[1];
-    const transform = `translate(${tx}px, ${ty}px)`;
-    const indicator = document.getElementById(ctrl.indicatorId);
-    if (indicator) indicator.style.transform = transform;
-    if (el) el.style.transform = transform;
-
-  }
+  if (ctrl) applyCC(ctrl, value);
 }
 
 // ---------------------------------------------------------------------------

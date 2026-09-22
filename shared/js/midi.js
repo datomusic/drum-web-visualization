@@ -1,46 +1,41 @@
 /**
  * midi.js
- * Web MIDI API wrapper.
+ * Web MIDI API wrapper, shared by every instrument.
  * Parses incoming MIDI messages and dispatches typed CustomEvents on `document`.
+ * Everything instrument-specific (the SysEx dialect) lives in a device profile
+ * passed to initMIDI() — see drum/js/device.js and duo/js/device.js.
  *
- * Events dispatched:
+ * Events dispatched here:
  *   'midi-cc'               detail: { channel, cc, value }
- *   'midi-note-on'          detail: { channel, note, velocity }
- *   'midi-note-off'         detail: { channel, note }
+ *   'midi-note-on'          detail: { channel, note, velocity, time }
+ *   'midi-note-off'         detail: { channel, note, time }
  *   'midi-aftertouch'       detail: { channel, note, pressure }
- *   'midi-clock'            detail: {}
+ *   'midi-clock'            detail: { time }
  *   'midi-transport'        detail: { type: 'start'|'continue'|'stop' }
- *   'midi-sequencer-state'  detail: { stepVelocities: number[] } (36 bytes: 4 tracks × 8 steps + 4 active notes)
  *   'midi-firmware-version' detail: { version }
- *   'midi-setting'          detail: { id, value }
  *   'midi-connected'        detail: { name }
  *   'midi-disconnected'     detail: { name }
+ * `time` is the message's DOMHighResTimeStamp (ms). Device profiles dispatch
+ * their own SysEx-derived events through dispatch().
+ *
+ * Device profile:
+ *   name                       shown in the "plug in the …" status message
+ *   requestFirmwareVersion()   send the firmware version request (retried until answered)
+ *   onConnected()              optional: further requests / polling once connected
+ *   onDisconnected()           optional: stop polling
+ *   parseSysEx(data)           handle an incoming SysEx message; return the version
+ *                              string if it was a firmware version response
  */
 
-// SysEx header: F0 + Dato manufacturer ID (00 22 01) + DRUM device ID (65)
-const SYSEX_HEADER = [0xF0, 0x00, 0x22, 0x01, 0x65];
-const TAG_FIRMWARE_VERSION_REQUEST = 0x01;
-const TAG_REBOOT_BOOTLOADER        = 0x0B;
-const TAG_SEQUENCER_STATE_REQUEST  = 0x30;
-const TAG_SEQUENCER_STATE_RESPONSE = 0x31;
-const TAG_GET_SETTING              = 0x40;
-const TAG_SETTING_VALUE            = 0x41;
-const TAG_SET_SETTING              = 0x42;
-
-export const SETTING_MIDI_CHANNEL = 0x01;
-export const SETTING_SLIDER_MODE  = 0x02;
-
-const SEQUENCER_POLL_INTERVAL_MS = 200;
-
 let midiAccess = null;
-let pollTimer = null;
+let device = null;
 let deviceName = null;
 let firmwareVersion = null;
 let statusElement = null;
 
-function sendSysEx(bytes) {
+/** Send a raw MIDI message (e.g. a complete F0 … F7 SysEx) to every connected output. */
+export function sendMessage(msg) {
   if (!midiAccess) return;
-  const msg = [...SYSEX_HEADER, ...bytes, 0xF7];
   for (const output of midiAccess.outputs.values()) {
     // Sending on a disconnected port throws InvalidStateError; skip stale ports
     if (output.state !== 'connected') continue;
@@ -64,7 +59,7 @@ function requestFirmwareVersionWithRetry() {
       return;
     }
     attempts++;
-    requestFirmwareVersion();
+    device.requestFirmwareVersion();
   };
   attempt();
   versionRetryTimer = setInterval(attempt, VERSION_RETRY_INTERVAL_MS);
@@ -77,30 +72,9 @@ function stopVersionRetry() {
   }
 }
 
-export function requestSequencerState() {
-  sendSysEx([TAG_SEQUENCER_STATE_REQUEST]);
-}
-
-export function requestFirmwareVersion() {
-  sendSysEx([TAG_FIRMWARE_VERSION_REQUEST]);
-}
-
-export function rebootToBootloader() {
-  console.log('sysex: RebootBootloader');
-  sendSysEx([TAG_REBOOT_BOOTLOADER]);
-}
-
-export function getSetting(id) {
-  sendSysEx([TAG_GET_SETTING, id & 0x7F]);
-}
-
-export function setSetting(id, value) {
-  console.log(`sysex: SetSetting id=0x${id.toString(16).padStart(2, '0')} value=${value}`);
-  sendSysEx([TAG_SET_SETTING, id & 0x7F, value & 0x7F]);
-}
-
-export async function initMIDI(statusEl) {
+export async function initMIDI(statusEl, deviceProfile) {
   statusElement = statusEl;
+  device = deviceProfile;
   if (!navigator.requestMIDIAccess) {
     setStatus('Web MIDI API not supported in this browser.');
     return;
@@ -115,9 +89,7 @@ export async function initMIDI(statusEl) {
 
   function onConnected() {
     requestFirmwareVersionWithRetry();
-    getSetting(SETTING_MIDI_CHANNEL);
-    getSetting(SETTING_SLIDER_MODE);
-    startPolling();
+    device.onConnected?.();
   }
 
   function attachInputs() {
@@ -133,7 +105,7 @@ export async function initMIDI(statusEl) {
       dispatch('midi-connected', { name: names });
       onConnected();
     } else {
-      setStatus('No MIDI input – plug in the DRUM');
+      setStatus(`No MIDI input – plug in the ${device.name}`);
     }
   }
 
@@ -154,7 +126,7 @@ export async function initMIDI(statusEl) {
       dispatch('midi-connected', { name: port.name });
       onConnected();
     } else {
-      stopPolling();
+      device.onDisconnected?.();
       stopVersionRetry();
       deviceName = null;
       firmwareVersion = null;
@@ -164,85 +136,35 @@ export async function initMIDI(statusEl) {
   };
 }
 
-function startPolling() {
-  stopPolling();
-  pollTimer = setInterval(requestSequencerState, SEQUENCER_POLL_INTERVAL_MS);
-  requestSequencerState();
-}
-
-function stopPolling() {
-  if (pollTimer !== null) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-}
-
 function updateConnectedStatus() {
   if (!deviceName) return;
   setStatus(firmwareVersion ? `Connected: ${deviceName} (${firmwareVersion})` : `Connected: ${deviceName}`);
 }
 
-function parseSysEx(data) {
-  if (data.length < SYSEX_HEADER.length + 1) return;
-  for (let i = 0; i < SYSEX_HEADER.length; i++) {
-    if (data[i] !== SYSEX_HEADER[i]) return;
-  }
-  const tag = data[SYSEX_HEADER.length];
-  const payloadStart = SYSEX_HEADER.length + 1;
-  const payload = data.slice(payloadStart, data.length - 1); // strip trailing F7
-
-  if (tag === TAG_SEQUENCER_STATE_RESPONSE) {
-    if (payload.length < 36) {
-      console.warn(`sysex: SequencerStateResponse too short (${payload.length} payload bytes, need 36)`);
-      return;
-    }
-    const stepVelocities = Array.from(payload.slice(0, 36));
-    dispatch('midi-sequencer-state', { stepVelocities });
-  } else if (tag === TAG_FIRMWARE_VERSION_REQUEST) {
-    firmwareVersion = decodeVersion(payload);
-    stopVersionRetry();
-    console.log(`sysex: firmware version ${firmwareVersion}`);
-    updateConnectedStatus();
-    dispatch('midi-firmware-version', { version: firmwareVersion });
-  } else if (tag === TAG_SETTING_VALUE) {
-    if (payload.length < 2) return;
-    const id = payload[0];
-    const value = payload[1];
-    console.log(`sysex: SettingValue id=0x${id.toString(16).padStart(2, '0')} value=${value}`);
-    dispatch('midi-setting', { id, value });
-  } else {
-    console.log(`sysex: unhandled tag 0x${tag.toString(16).padStart(2, '0')} (${data.length} bytes)`);
-  }
-}
-
-// Firmware version payload may be an ASCII string ("v0.2.0") or 3 raw bytes
-// (major, minor, patch) — handle both.
-function decodeVersion(payload) {
-  const bytes = Array.from(payload);
-  const isAscii = bytes.length > 0 && bytes.every(b => b >= 0x20 && b < 0x7F);
-  if (isAscii && bytes.length > 3) {
-    return String.fromCharCode(...bytes).replace(/\0+$/, '').trim();
-  }
-  if (bytes.length >= 3) {
-    return `v${bytes[0]}.${bytes[1]}.${bytes[2]}`;
-  }
-  if (isAscii) return String.fromCharCode(...bytes);
-  return `v? (${bytes.join(' ')})`;
+function onSysEx(data) {
+  const version = device.parseSysEx(data);
+  if (version == null) return;
+  firmwareVersion = version;
+  stopVersionRetry();
+  console.log(`sysex: firmware version ${firmwareVersion}`);
+  updateConnectedStatus();
+  dispatch('midi-firmware-version', { version: firmwareVersion });
 }
 
 function onMessage(e) {
   const [status, data1, data2] = e.data;
   const type = status & 0xF0;
   const channel = status & 0x0F;
+  const time = e.timeStamp;
 
   if (status === 0xF0) {
-    parseSysEx(e.data);
+    onSysEx(e.data);
     return;
   }
 
   switch (status) {
     case 0xF8: // MIDI Clock
-      dispatch('midi-clock', {});
+      dispatch('midi-clock', { time });
       return;
     case 0xFA: // Start
       dispatch('midi-transport', { type: 'start' });
@@ -257,13 +179,13 @@ function onMessage(e) {
 
   switch (type) {
     case 0x80: // Note Off
-      dispatch('midi-note-off', { channel, note: data1 });
+      dispatch('midi-note-off', { channel, note: data1, time });
       break;
     case 0x90: // Note On
       if (data2 === 0) {
-        dispatch('midi-note-off', { channel, note: data1 });
+        dispatch('midi-note-off', { channel, note: data1, time });
       } else {
-        dispatch('midi-note-on', { channel, note: data1, velocity: data2 });
+        dispatch('midi-note-on', { channel, note: data1, velocity: data2, time });
       }
       break;
     case 0xA0: // Polyphonic Aftertouch
@@ -275,7 +197,7 @@ function onMessage(e) {
   }
 }
 
-function dispatch(name, detail) {
+export function dispatch(name, detail) {
   document.dispatchEvent(new CustomEvent(name, { detail }));
 }
 

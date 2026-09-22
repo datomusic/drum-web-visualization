@@ -1,0 +1,153 @@
+/* test.css — production test panel, shared by every instrument's test.html */
+
+#test-panel {
+  flex: 1;
+  align-self: stretch;
+  background: #fff;
+  color: var(--color-text);
+  font-family: var(--font-base);
+  font-size: var(--text-s);
+  padding: var(--space-m) var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  overflow-y: auto;
+}
+
+/* Header now lives in the left pane, above the faceplate, instead of
+   inside #test-panel. That pane has a dark background, so this needs its
+   own (light) color rather than #test-panel's --color-text. */
+#test-title {
+  margin: 0 0 var(--space-s);
+  font-size: var(--text-l);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: #fff;
+  font-family: var(--font-base);
+}
+
+#test-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+}
+
+.test {
+  /* Full row by default; .half puts two on one row */
+  flex: 1 1 100%;
+  min-width: 0;
+  padding: var(--space-s) var(--space-m);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  /* Fill: light blue band spanning the visited min..max range (0–127) */
+  --fill-start: 0;
+  --fill-end: 0;
+  background: linear-gradient(to right,
+    var(--color-gray) calc(var(--fill-start) * 100%),
+    var(--color-light-blue) calc(var(--fill-start) * 100%),
+    var(--color-light-blue) calc(var(--fill-end) * 100%),
+    var(--color-gray) calc(var(--fill-end) * 100%));
+}
+
+.test-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-m);
+}
+
+/* Sits in the firmware row's value column (see buildList() in test.js) so it
+   doesn't add a line to the list; hidden once the version detail takes over. */
+#midi-status {
+  margin-left: auto;
+  font-size: var(--text-s);
+  color: var(--color-teal);
+  white-space: nowrap;
+}
+#midi-status[hidden] { display: none; }
+.test.done #midi-status { color: #fff; }
+
+.test.half {
+  flex-basis: calc(50% - var(--space-m) / 2);
+}
+.test.half .test-title { white-space: nowrap; }
+.test.half .test-detail {
+  font-size: var(--text-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.test.done { background: var(--color-green); color: #fff; }
+
+/* Rest zone: the window the control must be left in, drawn as a faint band behind the cursor */
+.test.has-rest::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--zone-start) * 100%);
+  width: calc((var(--zone-end) - var(--zone-start)) * 100%);
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+.test.done.has-rest::before {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Cursor: white bar at the current CC value (0–1 across the width). */
+.test.has-cursor::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  --cursor-w: 8px;
+  left: calc(var(--cursor) * (100% - var(--cursor-w)));
+  width: var(--cursor-w);
+  background: #fff;
+  pointer-events: none;
+  transition: left 60ms ease-out;
+}
+
+/* Punch: a quick physical bump the moment the item passes */
+.test.snap {
+  animation: detent 220ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes detent {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+.test-title {
+  font-size: var(--text-m);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.test-detail {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  opacity: 0.8;
+}
+
+.test-detail {
+  white-space: pre;
+}
+
+/* Faceplate state colors: each instrument's test.css paints its own SVG
+   elements for .test-idle / .test-active / .test-done using these. */
+:root { --color-faceplate-done: #00ff00; }
+
+/* ---- Performance ----
+   The test runs on slow machines. SVG filters are CPU-rasterized and re-run on
+   every fill/class change, and fill/transform transitions keep the faceplate
+   repainting for several frames per MIDI event. Neither is needed here: snap. */
+svg, svg * {
+  filter: none !important;
+  transition: none !important;
+}

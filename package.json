@@ -1,4 +1,5 @@
 {
+  "name": "dato-production-tests",
   "private": true,
   "scripts": {
     "dev": "vite"

@@ -1,65 +1,11 @@
-/* styles.css — base layout + state classes for the Dato DRUM visualizer */
+/* drum.css — DRUM faceplate (inlined SVG) state classes + visualizer control panel */
 
-:root {
-  --font-base: 'Sailec-Medium', 'Helvetica', 'Arial', sans-serif;
-
-  /* Type scale (fluid). Use these instead of ad-hoc clamp() expressions. */
-  --text-s: clamp(14px, 0.7rem + 0.4vw, 15px);
-  --text-m: clamp(17px, 0.9rem + 1vw, 21px);
-  --text-l: clamp(21px, 3.5vw, 28px);
-  --text-xl: clamp(24px, 5vw, 40px);
-
-  /* Spacing scale */
-  --space-s: 4px;
-  --space-m: 0.5em;
-  --space-l: 40px;
-
-  --color-text: #000000;
-  --color-green: #00d170;
-  --color-yellow: #fd3;
-  --color-blue: #66c2ff;
-  --color-light-blue: #89c9e7;
-  --color-light-green: #57e6bc;
-  --color-red: #f00;
-  --color-gray: #eee;
-  --color-teal: #00ae8e;
-  /* Approximate header height: used only for padding-top on non-landing pages.
-     A slightly-off value shifts inner content up/down; it no longer causes a
-     white band on the landing hero (which fills y=0 via grid overlap). */
-  --header-height: 78px;
-}
-
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: #1a1a1a;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  min-height: 100vh;
-  font-family: var(--font-base);
-}
-
-/* ---- Visualization container ---- */
-
-#visualization {
-  width: 100vmin;
-  max-width: 800px;
-}
-
+/* The DRUM artwork is drawn on its side */
 #visualization svg {
-  width: 100%;
-  height: auto;
-  display: block;
   transform: rotate(90deg);
 }
 
-/* ---- MIDI status bar ---- */
+/* ---- Control panel (index.html) ---- */
 
 #control-panel {
   flex: 1;
@@ -136,13 +82,6 @@ body {
   border-radius: 999px;
   padding: var(--space-m) var(--space-l);
   cursor: pointer;
-}
-
-#midi-status {
-  margin-top: auto;
-  color: var(--color-teal);
-  font-size: var(--text-s);
-  letter-spacing: 0.03em;
 }
 
 /* ============================================================
@@ -229,7 +168,7 @@ body {
 .knob-indicator {
   stroke: rgba(255, 255, 255, 0.2);
 }
-  
+
 .knob-indicator,
 .pitch-slider,
 #slider-swing {

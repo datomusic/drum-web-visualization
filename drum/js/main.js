@@ -4,16 +4,17 @@
  * Also handles the ?debug=1 overlay mode.
  */
 
+import { initMIDI } from '../../shared/js/midi.js';
 import {
-  initMIDI, setSetting, rebootToBootloader,
+  DRUM, setSetting, rebootToBootloader,
   SETTING_MIDI_CHANNEL, SETTING_SLIDER_MODE,
-} from './midi.js';
+} from './device.js';
 import { initVisualizer } from './visualizer.js';
 
 const statusEl = document.getElementById('midi-status');
 
 initVisualizer();
-initMIDI(statusEl);
+initMIDI(statusEl, DRUM);
 initControlPanel();
 
 // ---------------------------------------------------------------------------

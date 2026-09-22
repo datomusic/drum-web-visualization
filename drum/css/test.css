@@ -1,0 +1,90 @@
+/* test.css — DRUM-specific parts of the production test (drum/test.html) */
+
+/* The faceplate artwork has ~57px of empty space baked into its viewBox
+   above the visible ring (room for the corner triangles/shadow). Pull the
+   SVG up to close most of that gap so the header sits close to the ring. */
+#visualization {
+  position: relative;
+}
+#visualization > svg {
+  margin-top: -45px;
+}
+
+/* Sine wave toggle, bottom right of the faceplate pane (see js/tone.js).
+   Muted shows a slash through the speaker; playing shows the sound waves. */
+#tone-toggle {
+  position: absolute;
+  right: 48px;
+  bottom: 32px;
+  padding: var(--space-s);
+  background: none;
+  border: none;
+  color: var(--color-teal);
+  cursor: pointer;
+  line-height: 0;
+}
+/* drum.css rotates every svg under #visualization for the faceplate */
+#tone-toggle svg {
+  width: 32px;
+  height: 32px;
+  transform: none;
+}
+#tone-toggle.muted { color: #888; }
+#tone-toggle .tone-slash { display: none; }
+#tone-toggle.muted .tone-slash { display: block; }
+#tone-toggle.muted .tone-wave { display: none; }
+
+/* ---- Faceplate state colors ----
+   test.js puts .test-idle / .test-active / .test-done on the SVG element(s)
+   behind each CC test. Inline style="fill:…" on the source paths wins over
+   plain class rules, hence !important. */
+
+/* Buttons (effect pads): the path itself */
+.button.test-idle   { fill: #c8c8c8 !important; }
+.button.test-active { fill: var(--color-light-blue) !important; }
+.button.test-done   { fill: var(--color-faceplate-done) !important; }
+
+/* Sample select arrows: up/down each turn green once a non-wrapping step was seen */
+.sample-select.test-idle   { fill: #c8c8c8 !important; }
+.sample-select.test-active { fill: var(--color-light-blue) !important; }
+.sample-select.test-done   { fill: var(--color-faceplate-done) !important; }
+
+/* Drum pads: the pad face (first path in the group). Overrides the note color the
+   visualizer paints on hit; the .hit flash still shows through fill-opacity. */
+.pad.test-idle   > path:first-child { fill: #c8c8c8 !important; }
+.pad.test-active > path:first-child { fill: var(--color-light-blue) !important; }
+.pad.test-done   > path:first-child { fill: var(--color-faceplate-done) !important; }
+
+/* Step LEDs: state color for the LED, with the live on/off state shown through
+   opacity (dim = off, solid = on) so the operator can still dial in the final
+   pattern. The playhead (.active) keeps its teal from drum.css. */
+.step-led.test-idle   { fill: #c8c8c8 !important; }
+.step-led.test-active { fill: var(--color-light-blue) !important; }
+.step-led.test-done   { fill: var(--color-faceplate-done) !important; }
+.step-led.test-idle, .step-led.test-active, .step-led.test-done { fill-opacity: 0.35; }
+.step-led.test-idle.lit, .step-led.test-active.lit, .step-led.test-done.lit { fill-opacity: 1; }
+.step-led.active { fill: #00d9b5 !important; fill-opacity: 1; }
+
+/* Knobs: the body disc (first path in the group); the pointer line stays white
+   until the test passes, then the whole knob turns solid green */
+.knob.test-idle   > path:first-child { fill: #c8c8c8 !important; }
+.knob.test-active > path:first-child { fill: var(--color-light-blue) !important; }
+.knob.test-done   > path:first-child { fill: var(--color-faceplate-done) !important; }
+.knob.test-done   > path + path { stroke: var(--color-faceplate-done) !important; }
+
+/* Pitch sliders: the moving indicator is colored, the handle stays white and the
+   long track stays dark until the test passes, then track, indicator and handle
+   are one solid green bar */
+.knob-indicator.test-idle   { fill: #c8c8c8 !important; }
+.knob-indicator.test-active { fill: var(--color-light-blue) !important; }
+.knob-indicator.test-done,
+.pitch-slider-track.test-done,
+.slider.test-done           { fill: var(--color-faceplate-done) !important; }
+
+/* Swing switch: the body rect (first in the group); the three tick marks and the
+   track stay until the test passes, then the whole switch is solid green */
+#slider-swing.test-idle   > rect:first-child { fill: #c8c8c8 !important; }
+#slider-swing.test-active > rect:first-child { fill: var(--color-light-blue) !important; }
+#slider-swing.test-done   > rect,
+#slider-swing-track.test-done { fill: var(--color-faceplate-done) !important; }
+

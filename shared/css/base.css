@@ -1,0 +1,64 @@
+/* base.css — design tokens + page layout shared by every instrument page */
+
+:root {
+  --font-base: 'Sailec-Medium', 'Helvetica', 'Arial', sans-serif;
+
+  /* Type scale (fluid). Use these instead of ad-hoc clamp() expressions. */
+  --text-s: clamp(14px, 0.7rem + 0.4vw, 15px);
+  --text-m: clamp(17px, 0.9rem + 1vw, 21px);
+  --text-l: clamp(21px, 3.5vw, 28px);
+  --text-xl: clamp(24px, 5vw, 40px);
+
+  /* Spacing scale */
+  --space-s: 4px;
+  --space-m: 0.5em;
+  --space-l: 40px;
+
+  --color-text: #000000;
+  --color-green: #00d170;
+  --color-yellow: #fd3;
+  --color-blue: #66c2ff;
+  --color-light-blue: #89c9e7;
+  --color-light-green: #57e6bc;
+  --color-red: #f00;
+  --color-gray: #eee;
+  --color-teal: #00ae8e;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #1a1a1a;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  min-height: 100vh;
+  font-family: var(--font-base);
+}
+
+/* ---- Visualization container ---- */
+
+#visualization {
+  width: 100vmin;
+  max-width: 800px;
+}
+
+#visualization svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---- MIDI status ---- */
+
+#midi-status {
+  margin-top: auto;
+  color: var(--color-teal);
+  font-size: var(--text-s);
+  letter-spacing: 0.03em;
+}

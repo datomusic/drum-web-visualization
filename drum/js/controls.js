@@ -9,11 +9,10 @@ export const MIDI_CHANNEL = 9;
 
 /**
  * CC number → control descriptor
- * type:
+ * Types are applied by applyCC() in shared/js/faceplate.js:
  *   'button'  — lights up when value > 0, off at 0
  *   'knob'    — rotates its indicator element based on value 0-127
  *   'slider'  — translates both id and indicatorId along dir by travel SVG units
- *   'display' — custom visual (swing bars, etc.)
  */
 export const CC_CONTROLS = {
   7: { id: 'knob-volume', type: 'knob', indicatorId: null, label: 'Volume' },
@@ -95,20 +94,3 @@ export const TRACK_STEP_MAP = {
   3: [16, 23], // Track 3 maps to mid-inner ring (Clap / Green)
   4: [24, 31], // Track 4 maps to innermost ring (Hat / Yellow)
 };
-
-/**
- * Map a CC value (0-127) to a CSS rotation angle in degrees.
- * 0 → -135°, 64 → 0°, 127 → +135°
- */
-export function ccToRotation(value) {
-  return ((value / 127) * 270) - 135;
-}
-
-/**
- * Map a CC value (0-127) to a signed translation offset in SVG user units.
- * 0 → -travel, 64 → ~0, 127 → +travel
- * Multiply by ctrl.dir to get (tx, ty).
- */
-export function ccToTranslation(value, travel) {
-  return ((value / 127) * 2 - 1) * travel;
-}

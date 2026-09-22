@@ -1,0 +1,50 @@
+/* test.css — DUO-specific parts of the production test (duo/test.html) */
+
+/* The drawing is portrait (1920 × 2073): size it by the viewport height so the
+   whole faceplate fits next to the list without scrolling. */
+#visualization {
+  width: min(800px, 100vw - 420px, (100vh - 80px) * 1920 / 2073);
+}
+
+/* ---- Live state (js/visualizer.js) ---- */
+
+.button.pressed { stroke: #000; stroke-width: 10; }
+.key.hit .key-face { fill: #00d9b5 !important; }
+/* #play-outer.playing is at the end so it wins over the test state colors */
+
+/* Controls that send no MIDI can't be tested here: fade them out */
+#btn-random, #btn-boost, .step { opacity: 0.3; }
+
+/* ---- Faceplate state colors ----
+   test.js puts .test-idle / .test-active / .test-done on the SVG element(s)
+   behind each test. The source uses fill="" attributes, which any CSS rule
+   overrides. */
+
+/* Buttons */
+.button.test-idle   { fill: #c8c8c8; }
+.button.test-active { fill: var(--color-light-blue); }
+.button.test-done   { fill: var(--color-faceplate-done); }
+
+/* Knobs: the body; the pointer stays white until the test passes */
+.knob.test-idle   > circle { fill: #c8c8c8; }
+.knob.test-active > circle { fill: var(--color-light-blue); }
+.knob.test-done   > circle { fill: var(--color-faceplate-done); }
+.knob.test-done   > line   { stroke: var(--color-faceplate-done); }
+
+/* Sliders: the handle is colored; the track stays black until the test passes,
+   then handle and track are one solid green bar */
+.slider.test-idle   > rect { fill: #c8c8c8; }
+.slider.test-active > rect { fill: var(--color-light-blue); }
+.slider.test-done   > rect,
+.slider-track.test-done    { fill: var(--color-faceplate-done); }
+
+/* Keys: the black face */
+.key.test-idle   .key-face { fill: #c8c8c8; }
+.key.test-active .key-face { fill: var(--color-light-blue); }
+.key.test-done   .key-face { fill: var(--color-faceplate-done); }
+
+/* Transpose arrows and play button */
+.arrow.test-idle,   #play-outer.test-idle   { fill: #c8c8c8; }
+.arrow.test-active, #play-outer.test-active { fill: var(--color-light-blue); }
+.arrow.test-done,   #play-outer.test-done   { fill: var(--color-faceplate-done); }
+#play-outer.playing { fill: #00d9b5; }
